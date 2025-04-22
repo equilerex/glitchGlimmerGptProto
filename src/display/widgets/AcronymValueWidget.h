@@ -37,7 +37,7 @@ public:
 
     void draw(TFT_eSPI& tft, int x, int y, int width, int height) override {
         // Background
-        const uint16_t bgColor = highlight ? TFT_NAVY : TFT_DARKGREY;
+        const uint16_t bgColor = highlight ? TFT_BLACK: TFT_BLACK;
         tft.fillRoundRect(x, y, width, height, 4, bgColor);
 
         // Label

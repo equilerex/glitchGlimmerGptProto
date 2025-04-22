@@ -1,6 +1,7 @@
 #pragma once
 #include <Encoder.h>
 #include "../core/SettingsManager.h"
+#include "../core/Debug.h"
 
 // Forward declaration to avoid circular dependency
 class DisplayManager;
@@ -29,10 +30,12 @@ public:
     void begin() {
         encoder = new Encoder(pinA, pinB);
         if (!encoder) {
-            Serial.println("Error: Encoder initialization failed!");
+            Debug::log(Debug::ERROR, "Encoder initialization failed!");
             return;
         }
         pinMode(buttonPin, INPUT_PULLUP);
+        Debug::logf(Debug::INFO, "EncoderInput initialized: pins A=%d, B=%d, button=%d",
+                    pinA, pinB, buttonPin);
     }
 
     void update() {
@@ -44,20 +47,27 @@ public:
             lastEncoderValue = newEncoderVal;
             lastInputTime = millis();
             inSettingsMode = true;
+
+            Debug::logf(Debug::DEBUG, "Encoder rotated: delta=%d, newValue=%d",
+                        delta, newEncoderVal);
             adjustCurrentSetting(delta);
         }
 
         if (digitalRead(buttonPin) == LOW) {
-            delay(100);  // debounce
+            Debug::log(Debug::DEBUG, "Button press detected, debouncing..."); 
+                // todo: debounce
             if (digitalRead(buttonPin) == LOW) {
                 inSettingsMode = true;
+                Debug::log(Debug::INFO, "Button press confirmed, switching to next setting");
                 settings.next(); // Go to next setting
                 lastInputTime = millis();
                 while (digitalRead(buttonPin) == LOW); // wait for release
+                Debug::log(Debug::DEBUG, "Button released");
             }
         }
 
         if (inSettingsMode && millis() - lastInputTime > 3000) {
+            Debug::log(Debug::DEBUG, "Settings mode timeout, returning to normal mode");
             inSettingsMode = false;
         }
 
@@ -74,9 +84,11 @@ public:
                 default: settingName = "Unknown"; break;
             }
 
+            Debug::logf(Debug::DEBUG, "Showing setting: %s = %d",
+                       settingName.c_str(), settings.get(currentSetting));
             display->showSetting(settingName, settings.get(currentSetting));
         } else if (inSettingsMode && display == nullptr) {
-            Serial.println("Warning: DisplayManager is not set!");
+            Debug::log(Debug::ERROR, "DisplayManager is not set! Cannot show settings.");
         }
     }
 

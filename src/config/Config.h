@@ -5,11 +5,11 @@
 // ==== AUDIO ====
 #define SAMPLE_RATE        44100       // Sampling rate in Hz
 #define NUM_SAMPLES        256         // FFT input sample count (power of 2)
-#define I2S_PORT I2S_NUM_0   // Which I2S peripheral to use
+#define I2S_PORT           I2S_NUM_0   // Which I2S peripheral to use
 #define I2S_SCK            27          // Bit clock pin
 #define I2S_WS             26          // Word select (LR clock)
 #define I2S_SD             32          // Serial data input (from mic)
-
+#define LED_PIN            25
 // ==== LED ====
 
 //cant put this in the array, needs to be defined on compile
@@ -21,7 +21,6 @@
 #define DEFAULT_BRIGHTNESS 128         // Default brightness
 
 #define LED_STRIP_PIN_1  25
-#define LED_STRIP_TYPE_1 = WS2812B
 #define LED_STRIP_COUNT_1  60
 
 // ==== MEMORY MANAGEMENT ====
@@ -29,8 +28,8 @@
 #define MIN_FREE_HEAP         32768    // 32KB minimum free heap
 
 // ==== ENCODER ====
-#define ENCODER_PIN_A      21
-#define ENCODER_PIN_B      22
+#define ENCODER_PIN_A      22
+#define ENCODER_PIN_B      21
 #define ENCODER_BTN_PIN    17
 
 // ==== BUTTON ====

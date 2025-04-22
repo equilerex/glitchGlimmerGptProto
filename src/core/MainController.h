@@ -21,22 +21,24 @@
 class MainController {
 public:
     MainController();
+    ~MainController();  // Add destructor
 
     void begin();
     void update();
+    void reset();
 
     void setupStrips();
 
 private:
     TFT_eSPI tft;
-    AudioProcessor audioProcessor;
+    AudioProcessor* audioProcessor;
     SettingsManager settingsManager;
-    AnimationManager animationManager;
-    HybridController hybridController;
-    DisplayManager displayManager;
-    EncoderInput encoderInput;
-    ButtonInput buttonInput;
-    WebUI webUI;
+    AnimationManager* animationManager;
+    HybridController* hybridController;
+    DisplayManager* displayManager;
+    EncoderInput* encoderInput;
+    ButtonInput* buttonInput;
+    WebUI* webUI;
 
     std::vector<LEDStrip> strips;
 };

@@ -10,7 +10,7 @@
 
 DisplayManager::DisplayManager(TFT_eSPI &display)
     : _tft(display), layout(DISPLAY_WIDTH, DISPLAY_HEIGHT),
-      showSettingScreen(false), settingDisplayTime(0), loading(true) {
+      showSettingScreen(false), settingDisplayTime(0), loading(true), errorState(false) {
     // Initialize with a default theme
     theme = CyberpunkTheme;
 }
@@ -45,13 +45,26 @@ void DisplayManager::begin() {
     showStartupScreen();
 }
 
-void DisplayManager::update(const AudioFeatures& features, int animIndex, int animCount, bool autoSwitch, String keepReason) {
+void DisplayManager::update(const AudioFeatures& features, const String& animName,
+                          int animIndex, int animCount, bool autoSwitch, String keepReason) {
     if (loading) return;
+    if (errorState) {
+        showError(errorMessage);
+        return;
+    }
     if (showSettingScreen) {
         drawSettingScreen();
-    } else {
-        updateAudioVisualization(features, animIndex, animCount, autoSwitch, keepReason);
+        return;
     }
+    
+    currentAnimationName = animName;
+    updateAudioVisualization(features, animIndex, animCount, autoSwitch, keepReason);
+    
+    // Add animation name display
+    _tft.setTextColor(theme.primary, TFT_BLACK);
+    _tft.setTextSize(1);
+    _tft.setCursor(5, 5);
+    _tft.print(currentAnimationName);
 }
 
 void DisplayManager::showSetting(const String& name, int value) {
@@ -102,7 +115,9 @@ void DisplayManager::drawSettingScreen() {
     _tft.print("press knob for more");
 }
 
-void DisplayManager::updateAudioVisualization(const AudioFeatures& features, int animIndex, int animCount, bool autoSwitch, String keepReason) {
+void DisplayManager::updateAudioVisualization(const AudioFeatures& features, 
+                                            int animIndex, int animCount, 
+                                            bool autoSwitch, String keepReason) {
     Debug::log(Debug::DEBUG, "Drawing new frame");
     Debug::logf(Debug::DEBUG, "Features: vol=%.3f, bass=%.3f, mid=%.3f, treb=%.3f, beat=%d, bpm=%.2f, loud=%d",
                 features.volume, features.bass, features.mid, features.treble,
@@ -123,6 +138,25 @@ void DisplayManager::updateAudioVisualization(const AudioFeatures& features, int
     layout.addWidget(new AcronymValueWidget("AUTO", autoSwitch));
     layout.addWidget(new AcronymValueWidget("KEEP", String(keepReason)));
 
-    layout.addWidget(new WaveformWidget(features.waveform, NUM_SAMPLES, theme.waveformColor));
+    layout.addWidget(new WaveformWidget(features.waveform, NUM_SAMPLES, theme, features.beatDetected));
     layout.draw(_tft);
+}
+
+void DisplayManager::showError(const String& message) {
+    errorState = true;
+    errorMessage = message;
+    _tft.fillScreen(TFT_BLACK);
+    _tft.setTextColor(TFT_RED, TFT_BLACK);
+    _tft.setTextSize(1);
+    _tft.setCursor(10, _tft.height()/2);
+    _tft.print("ERROR: " + errorMessage);
+}
+
+void DisplayManager::setCurrentAnimation(const String& name) {
+    currentAnimationName = name;
+}
+
+void DisplayManager::clearError() {
+    errorState = false;
+    errorMessage = "";
 }

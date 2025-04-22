@@ -6,13 +6,21 @@
 #include "../audio/AudioProcessor.h"
 #include "BaseAnimation.h"
 
-static std::vector<int> drips; // used in multiple animations
+static std::vector<int> drips;
 
 class FirestormAnimation : public BaseAnimation {
 private:
     uint8_t* heat = nullptr;
 
 public:
+    static const char* staticName() {
+        return "Firestorm";
+    }
+
+    FirestormAnimation() {
+        // Constructor
+    }
+    
     void update(const AudioFeatures& features) override {
         if (!heat) heat = new uint8_t[numLeds]();
 
@@ -35,7 +43,7 @@ public:
         }
     }
 
-    const char* getName() override {
+    const char* getName() const override {
         return "Firestorm";
     }
 
@@ -50,6 +58,14 @@ private:
     int rippleStep = -1;
 
 public:
+    static const char* staticName() {
+        return "Ripple Cascade";
+    }
+
+    RippleCascadeAnimation() {
+        // Constructor
+    }
+    
     void update(const AudioFeatures& features) override {
         if (features.beatDetected) {
             rippleColor = random8();
@@ -70,7 +86,7 @@ public:
         }
     }
 
-    const char* getName() override {
+    const char* getName() const override {
         return "Ripple Cascade";
     }
 };
@@ -80,6 +96,14 @@ private:
     uint8_t hue = 0;
 
 public:
+    static const char* staticName() {
+        return "Color Tunnel";
+    }
+
+    ColorTunnelAnimation() {
+        // Constructor
+    }
+    
     void update(const AudioFeatures& features) override {
         hue += features.volume * 8;
 
@@ -94,7 +118,7 @@ public:
         }
     }
 
-    const char* getName() override {
+    const char* getName() const override {
         return "Color Tunnel";
     }
 };
@@ -104,6 +128,14 @@ private:
     uint8_t swirl = 0;
 
 public:
+    static const char* staticName() {
+        return "Energy Swirl";
+    }
+
+    EnergySwirlAnimation() {
+        // Constructor
+    }
+    
     void update(const AudioFeatures& features) override {
         swirl += features.mid * 8;
 
@@ -114,7 +146,7 @@ public:
         blur1d(leds, numLeds, 30);
     }
 
-    const char* getName() override {
+    const char* getName() const override {
         return "Energy Swirl";
     }
 };
@@ -125,6 +157,14 @@ private:
     unsigned long lastChange = 0;
 
 public:
+    static const char* staticName() {
+        return "Strobe Matrix";
+    }
+
+    StrobeMatrixAnimation() {
+        // Constructor
+    }
+    
     void update(const AudioFeatures& features) override {
         if (millis() - lastChange > (features.bass > 0.5 ? 60 : 180)) {
             state = !state;
@@ -140,7 +180,7 @@ public:
         }
     }
 
-    const char* getName() override {
+    const char* getName() const override {
         return "Strobe Matrix";
     }
 };
@@ -151,6 +191,14 @@ private:
     int size = 0;
 
 public:
+    static const char* staticName() {
+        return "Bass Bloom";
+    }
+
+    BassBloomAnimation() {
+        // Constructor
+    }
+    
     void update(const AudioFeatures& features) override {
         if (features.bass > 0.5 || features.beatDetected) {
             size = numLeds / 2;
@@ -169,7 +217,7 @@ public:
         if (size > 0) size--;
     }
 
-    const char* getName() override {
+    const char* getName() const override {
         return "Bass Bloom";
     }
 };
@@ -179,6 +227,14 @@ private:
     uint8_t hue = 0;
 
 public:
+    static const char* staticName() {
+        return "Color Drip";
+    }
+
+    ColorDripAnimation() {
+        // Constructor
+    }
+    
     void update(const AudioFeatures& features) override {
         fadeToBlackBy(leds, numLeds, 30);
 
@@ -201,13 +257,21 @@ public:
         }), drips.end());
     }
 
-    const char* getName() override {
+    const char* getName() const override {
         return "Color Drip";
     }
 };
 
 class FrequencyRiverAnimation : public BaseAnimation {
 public:
+    static const char* staticName() {
+        return "Frequency River";
+    }
+
+    FrequencyRiverAnimation() {
+        // Constructor
+    }
+    
     void update(const AudioFeatures& features) override {
         int third = numLeds / 3;
         fill_solid(leds, third, CHSV(160, 255, features.bass * 255));
@@ -216,7 +280,7 @@ public:
         blur1d(leds, numLeds, 16);
     }
 
-    const char* getName() override {
+    const char* getName() const override {
         return "Frequency River";
     }
 };
@@ -227,6 +291,14 @@ private:
     int radius = 0;
 
 public:
+    static const char* staticName() {
+        return "Party Pulse";
+    }
+
+    PartyPulseAnimation() {
+        // Constructor
+    }
+    
     void update(const AudioFeatures& features) override {
         if (features.beatDetected) hue += 30;
 
@@ -250,7 +322,7 @@ public:
         blur1d(leds, numLeds, 18);
     }
 
-    const char* getName() override {
+    const char* getName() const override {
         return "Party Pulse";
     }
 };
@@ -260,6 +332,14 @@ private:
     uint8_t hue = 0;
 
 public:
+    static const char* staticName() {
+        return "Cyber Flux";
+    }
+
+    CyberFluxAnimation() {
+        // Constructor
+    }
+    
     void update(const AudioFeatures& features) override {
         hue += features.volume * 4;
 
@@ -282,7 +362,7 @@ public:
         fadeToBlackBy(leds, numLeds, 22);
     }
 
-    const char* getName() override {
+    const char* getName() const override {
         return "Cyber Flux";
     }
 };
@@ -292,6 +372,14 @@ private:
     uint8_t offset = 0;
 
 public:
+    static const char* staticName() {
+        return "Bio Signal";
+    }
+
+    BioSignalAnimation() {
+        // Constructor
+    }
+    
     void update(const AudioFeatures& features) override {
         offset += 2;
 
@@ -313,31 +401,51 @@ public:
         blur1d(leds, numLeds, 30);
     }
 
-    const char* getName() override {
+    const char* getName() const override {
         return "Bio Signal";
     }
 };
 
 class ChaosEngineAnimation : public BaseAnimation {
 public:
+    static const char* staticName() {
+        return "Chaos Engine";
+    }
+
+    ChaosEngineAnimation() {
+        // Constructor
+    }
+    
     void update(const AudioFeatures&) override {
         fill_rainbow(leds, numLeds, millis() / 10, 7);
     }
 
-    const char* getName() override {
+    const char* getName() const override {
         return "Chaos Engine";
     }
 };
 
 class GalacticDriftAnimation : public BaseAnimation {
 public:
-    void update(const AudioFeatures&) override {
+    static const char* staticName() {
+        return "Galactic Drift";
+    }
+
+    GalacticDriftAnimation() {
+        // Constructor
+    }
+    
+    void update(const AudioFeatures& features) override {
         for (int i = 0; i < numLeds; i++) {
             leds[i] = CHSV((i * 4 + millis() / 5) % 255, 255, sin8(i * 3 + millis() / 7));
         }
     }
 
-    const char* getName() override {
+    void updateWithFeatures(const AudioFeatures& features) override {
+        update(features);
+    }
+
+    const char* getName() const override {
         return "Galactic Drift";
     }
 };
@@ -347,6 +455,14 @@ private:
     uint8_t baseHue = 0;
 
 public:
+    static const char* staticName() {
+        return "Audio Storm";
+    }
+
+    AudioStormAnimation() {
+        // Constructor
+    }
+    
     void update(const AudioFeatures& features) override {
         baseHue += features.volume * 10;
         for (int i = 0; i < numLeds; i++) {
@@ -355,13 +471,25 @@ public:
         fadeToBlackBy(leds, numLeds, 10);
     }
 
-    const char* getName() override {
+    void updateWithFeatures(const AudioFeatures& features) override {
+        update(features);
+    }
+
+    const char* getName() const override {
         return "Audio Storm";
     }
 };
 
 class SpectrumWavesAnimation : public BaseAnimation {
 public:
+    static const char* staticName() {
+        return "Spectrum Waves";
+    }
+
+    SpectrumWavesAnimation() {
+        // Constructor
+    }
+    
     void update(const AudioFeatures& audio) override {
         for (int i = 0; i < numLeds; i++) {
             float t = static_cast<float>(i) / numLeds;
@@ -371,21 +499,12 @@ public:
             leds[i] = CHSV(t * 255, 255, level);
         }
     }
-    const char* getName() override {
-        return "SpectrumWavesAnimation";
-    }
-};
 
-/*
-class BassPulseAnimation : public BaseAnimation {
-public:
-    const char* getName() override {
-        return "Bass Pulse";
+    void updateWithFeatures(const AudioFeatures& features) override {
+        update(features);
     }
 
-    void update(const AudioFeatures& audio, const SensorData& sensor, const GlobalSettings& settings) override {
-        uint8_t brightness = (uint8_t)(constrain(audio.bass * 255.0, 0, 255));
-        fill_solid(leds, numLeds, CHSV(160, 255, brightness));
+    const char* getName() const override {
+        return "Spectrum Waves";
     }
 };
-*/

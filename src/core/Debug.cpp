@@ -1,5 +1,7 @@
 #include "Debug.h"
 
 #if DEBUG_ENABLED
-Debug::Level Debug::currentLevel = static_cast<Debug::Level>(DEBUG_LEVEL);
+Debug::LogLevel Debug::currentLevel = static_cast<Debug::LogLevel>(DEBUG_LEVEL);
+#else
+Debug::LogLevel Debug::currentLevel = Debug::ERROR; // Default to ERROR level when debugging is disabled
 #endif
