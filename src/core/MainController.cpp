@@ -5,7 +5,7 @@
 #include "../core/SettingsManager.h"
 #include "../display/DisplayManager.h"
 #include "../net/WebUI.h"
-#include "../utils/Debug.h"
+#include "Debug.h"
 #include "../config/Config.h"
 #include <FastLED.h>
 
@@ -20,36 +20,61 @@ MainController::MainController()
 }
 
 void MainController::begin() { 
-    DEBUG_PRINTLN("[MainController] Initializing system...");
+    Debug::log(Debug::INFO, "MainController: Starting initialization");
 
     // Setup display and display manager
     displayManager.begin();
+    Debug::log(Debug::INFO, "Display initialized");
 
     // Start audio and input processors
-    audioProcessor.begin();
+    try {
+        audioProcessor.begin();
+        Debug::log(Debug::INFO, "Audio processor initialized");
+    } catch (const std::exception& e) {
+        Debug::logf(Debug::ERROR, "Audio initialization failed: %s", e.what());
+        throw;
+    }
 
     // Setup LED strips using config defines
     setupStrips();
 
-    // Initialize animation manager
-    animationManager.initialize();
+    try {
+        // Initialize animation manager
+        animationManager.initialize();
+        Debug::log(Debug::INFO, "Animation manager initialized");
 
-    buttonInput.begin();
-    encoderInput.begin();
+        buttonInput.begin();
+        encoderInput.begin();
+        Debug::log(Debug::INFO, "Input devices initialized");
+    } catch (const std::exception& e) {
+        Debug::logf(Debug::ERROR, "Component initialization failed: %s", e.what());
+        throw;
+    }
 
-    // Link Web UI if needed
-    //webUI.begin(&settingsManager);
-
-    DEBUG_PRINTLN("[MainController] System initialized successfully.");
+    Debug::log(Debug::INFO, "MainController initialization complete");
 }
 
 void MainController::update() {
+    #if ENABLE_HEAP_MONITORING
+    static unsigned long lastHeapCheck = 0;
+    if (millis() - lastHeapCheck > 5000) {  // Check every 5 seconds
+        size_t freeHeap = ESP.getFreeHeap();
+        Debug::logf(Debug::DEBUG, "Free heap: %d bytes", freeHeap);
+        lastHeapCheck = millis();
+        
+        if (freeHeap < MIN_FREE_HEAP) {
+            Debug::log(Debug::ERROR, "Critical: Low memory condition");
+        }
+    }
+    #endif
+
     audioProcessor.captureAudio();
     AudioFeatures features = audioProcessor.analyzeAudio();
 
-    DEBUG_PRINTF("[MainController] AudioFeatures: vol=%.3f, bass=%.3f, mid=%.3f, treb=%.3f, beat=%d, bpm=%.2f, loud=%d\n",
+    Debug::logf(Debug::DEBUG, "[MainController] AudioFeatures: vol=%.3f, bass=%.3f, mid=%.3f, treb=%.3f, beat=%d, bpm=%.2f, loud=%d\n",
         features.volume, features.bass, features.mid, features.treble,
         features.beatDetected, features.bpm, features.loudness);
+
 
     // Inputs
     buttonInput.update();
@@ -78,13 +103,33 @@ void MainController::update() {
 
 
 void MainController::setupStrips() {
-#ifdef LED_STRIP_COUNT_1
-    CRGB* leds1 = new CRGB[LED_STRIP_COUNT_1];
+    Debug::log(Debug::INFO, "Setting up LED strips");
+    
+    size_t freeHeap = ESP.getFreeHeap();
+    Debug::logf(Debug::INFO, "Free heap before LED init: %d bytes", freeHeap);
+    
+    if (freeHeap < MIN_FREE_HEAP) {
+        Debug::log(Debug::ERROR, "Not enough memory to initialize LED strips");
+        return;
+    }
 
-    FastLED.addLeds<WS2812B, LED_STRIP_PIN_1, RGB>(leds1, LED_STRIP_COUNT_1);
-    FastLED.setBrightness(DEFAULT_BRIGHTNESS);
-    strips.emplace_back(leds1, LED_STRIP_COUNT_1);
-    strips.back().begin();
+#ifdef LED_STRIP_COUNT_1
+    try {
+        CRGB* leds1 = new CRGB[LED_STRIP_COUNT_1];
+        if (!leds1) {
+            Debug::log(Debug::ERROR, "Failed to allocate memory for LED strip 1");
+            return;
+        }
+        FastLED.addLeds<WS2812B, LED_STRIP_PIN_1, RGB>(leds1, LED_STRIP_COUNT_1);
+        FastLED.setBrightness(DEFAULT_BRIGHTNESS);
+        strips.emplace_back(leds1, LED_STRIP_COUNT_1);
+        strips.back().begin();
+        Debug::logf(Debug::INFO, "LED Strip 1 initialized: %d LEDs", LED_STRIP_COUNT_1);
+    } catch (const std::exception& e) {
+        Debug::logf(Debug::ERROR, "LED Strip 1 init failed: %s. Free heap: %d", 
+                    e.what(), ESP.getFreeHeap());
+        throw;
+    }
 #endif
 
 #ifdef LED_STRIP_COUNT_2

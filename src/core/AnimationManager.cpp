@@ -1,6 +1,6 @@
 #include "AnimationManager.h"
 #include "../animations/AnimationRegistry.h"
-#include "../utils/Debug.h"
+#include "Debug.h"
 
 
 void AnimationManager::initialize() {
@@ -12,9 +12,7 @@ void AnimationManager::initialize() {
 
 void AnimationManager::registerAnimation(std::unique_ptr<BaseAnimation> anim) {
     animations.push_back(std::move(anim));
-
-    DEBUG_PRINTF("Added animation: %d\n",
-        anim->getName());
+    Debug::logf(Debug::INFO, "Added animation: %s", anim->getName());
 }
 
 void AnimationManager::next() {

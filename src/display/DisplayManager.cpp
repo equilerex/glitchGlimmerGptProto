@@ -1,5 +1,5 @@
 #include "DisplayManager.h"
-#include "../utils/Debug.h"
+#include "../core/Debug.h"
 #include "widgets/AcronymValueWidget.h"
 #include "widgets/VerticalBarWidget.h"
 #include "widgets/WaveformWidget.h"
@@ -102,10 +102,11 @@ void DisplayManager::drawSettingScreen() {
     _tft.print("press knob for more");
 }
 
-void DisplayManager::updateAudioVisualization(const AudioFeatures& features, int animIndex, int animCount, bool autoSwitch, String keepReason  ) {
-    DEBUG_PRINTLN("[DisplayManager] Drawing new frame");
-    DEBUG_PRINTF("[DisplayManager] features: vol=%.3f, bass=%.3f, mid=%.3f, treb=%.3f, beat=%d, bpm=%.2f, loud=%d\n",
-                 features.volume, features.bass, features.mid, features.treble, features.beatDetected, features.bpm, features.loudness);
+void DisplayManager::updateAudioVisualization(const AudioFeatures& features, int animIndex, int animCount, bool autoSwitch, String keepReason) {
+    Debug::log(Debug::DEBUG, "Drawing new frame");
+    Debug::logf(Debug::DEBUG, "Features: vol=%.3f, bass=%.3f, mid=%.3f, treb=%.3f, beat=%d, bpm=%.2f, loud=%d",
+                features.volume, features.bass, features.mid, features.treble,
+                features.beatDetected, features.bpm, features.loudness);
 
     _tft.fillScreen(TFT_BLACK);
     layout = GridLayout(_tft.width(), _tft.height());

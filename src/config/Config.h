@@ -4,7 +4,7 @@
 
 // ==== AUDIO ====
 #define SAMPLE_RATE        44100       // Sampling rate in Hz
-#define NUM_SAMPLES        512         // FFT input sample count (power of 2)
+#define NUM_SAMPLES        256         // FFT input sample count (power of 2)
 #define I2S_PORT I2S_NUM_0   // Which I2S peripheral to use
 #define I2S_SCK            27          // Bit clock pin
 #define I2S_WS             26          // Word select (LR clock)
@@ -16,19 +16,17 @@
 #define LED_STRIP_CONFIGS_1_PIN            25
 // #define LED_STRIP_CONFIGS_1_PIN          39
 // #define LED_STRIP_CONFIGS_1_PIN          38
-// #define LED_STRIP_CONFIGS_1_PIN          37
-
-
-
+// #define LED_STRIP_CONFIGS_1_PIN           37
 
 #define DEFAULT_BRIGHTNESS 128         // Default brightness
 
 #define LED_STRIP_PIN_1  25
 #define LED_STRIP_TYPE_1 = WS2812B
-#define LED_STRIP_COUNT_1  100
+#define LED_STRIP_COUNT_1  60
 
-
-
+// ==== MEMORY MANAGEMENT ====
+#define ENABLE_HEAP_MONITORING true
+#define MIN_FREE_HEAP         32768    // 32KB minimum free heap
 
 // ==== ENCODER ====
 #define ENCODER_PIN_A      21
@@ -52,6 +50,10 @@
 #define FFT_MAX_SCALE      50.0        // Scale factor for normalizing FFT bars
 #define BAR_HEIGHT_MAX     30          // Max height for bass/mid/treble bars
 
+// ==== DEBUG CONFIG ====
+#define DEBUG_ENABLED      true        // Master debug switch
+#define DEBUG_LEVEL       2           // 0=ERROR, 1=INFO, 2=DEBUG
+#define DEBUG_BAUDRATE    115200      // Debug serial baudrate
 
 // Fallback for std::make_unique if not available
 #if __cplusplus < 201402L

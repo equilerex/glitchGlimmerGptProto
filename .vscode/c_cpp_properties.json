@@ -8,8 +8,8 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "d:/ESP32 projects/GlitchGlitter/chatgpt/include",
-                "d:/ESP32 projects/GlitchGlitter/chatgpt/src",
+                "d:/ESP32 projects/GlitchGlitter/chatgpt/glitchGlimmerGptProto/include",
+                "d:/ESP32 projects/GlitchGlitter/chatgpt/glitchGlimmerGptProto/src",
                 "C:/Users/Joosep/Documents/Arduino/libraries/Encoder",
                 "C:/Users/Joosep/Documents/Arduino/libraries/Encoder/utility",
                 "C:/Users/Joosep/Documents/Arduino/libraries/Button2/src",
@@ -261,8 +261,8 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "d:/ESP32 projects/GlitchGlitter/chatgpt/include",
-                    "d:/ESP32 projects/GlitchGlitter/chatgpt/src",
+                    "d:/ESP32 projects/GlitchGlitter/chatgpt/glitchGlimmerGptProto/include",
+                    "d:/ESP32 projects/GlitchGlitter/chatgpt/glitchGlimmerGptProto/src",
                     "C:/Users/Joosep/Documents/Arduino/libraries/Encoder",
                     "C:/Users/Joosep/Documents/Arduino/libraries/Encoder/utility",
                     "C:/Users/Joosep/Documents/Arduino/libraries/Button2/src",

@@ -2,7 +2,7 @@
 
 #include "../audio/AudioProcessor.h"
 #include "../core/AnimationManager.h"
-#include "../utils/Debug.h"
+#include "Debug.h"
 
 enum class ModeKeepReason {
     NONE,

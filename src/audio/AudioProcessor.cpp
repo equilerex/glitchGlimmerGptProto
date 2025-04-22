@@ -1,5 +1,5 @@
 #include "AudioProcessor.h"
-#include "../utils/Debug.h"
+#include "../core/Debug.h"
 #include "../config/Config.h"
 
 AudioProcessor::AudioProcessor()
@@ -16,8 +16,8 @@ void AudioProcessor::begin() {
         .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .intr_alloc_flags = 0,
-        .dma_buf_count = 8,
-        .dma_buf_len = 64,
+        .dma_buf_count = 4,     // Reduced from 8
+        .dma_buf_len = 32,      // Reduced from 64
         .use_apll = false,
         .tx_desc_auto_clear = false,
         .fixed_mclk = 0
@@ -38,8 +38,20 @@ void AudioProcessor::begin() {
 void AudioProcessor::captureAudio() {
     size_t bytesRead = 0;
     int32_t i2sBuffer[NUM_SAMPLES];
-    i2s_read(I2S_PORT, (void*)i2sBuffer, sizeof(i2sBuffer), &bytesRead, portMAX_DELAY);
+    esp_err_t err = i2s_read(I2S_PORT, (void*)i2sBuffer, sizeof(i2sBuffer), &bytesRead, portMAX_DELAY);
+    
+    if (err != ESP_OK) {
+        Debug::logf(Debug::ERROR, "I2S read failed: %d", err);
+        return;
+    }
+
+    if (bytesRead == 0) {
+        Debug::log(Debug::DEBUG, "No audio data received");
+        return;
+    }
+
     int samplesRead = bytesRead / sizeof(int32_t);
+    Debug::logf(Debug::DEBUG, "Read %d audio samples", samplesRead);
 
     for (int i = 0; i < samplesRead && i < NUM_SAMPLES; i++) {
         float normalized = i2sBuffer[i] / 8388608.0f;
@@ -56,6 +68,21 @@ void AudioProcessor::captureAudio() {
 
 AudioFeatures AudioProcessor::analyzeAudio() {
     AudioFeatures features = {};
+    
+    // Validate input data
+    bool hasValidData = false;
+    for (int i = 0; i < NUM_SAMPLES; i++) {
+        if (vReal[i] != 0.0) {
+            hasValidData = true;
+            break;
+        }
+    }
+
+    if (!hasValidData) {
+        Debug::log(Debug::DEBUG, "No valid audio data for analysis");
+        return features;
+    }
+
     double sumSquares = 0.0;
     for (int i = 0; i < NUM_SAMPLES; i++) {
         vReal[i] = constrain(vReal[i], -1.0f, 1.0f);
@@ -95,5 +122,10 @@ AudioFeatures AudioProcessor::analyzeAudio() {
     features.waveform = buffer;
 
     previousVolume = features.volume;
+
+    if (features.beatDetected) {
+        Debug::logf(Debug::DEBUG, "Beat detected! BPM: %.1f", features.bpm);
+    }
+
     return features;
 }

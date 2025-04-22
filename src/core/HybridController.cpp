@@ -30,12 +30,18 @@ bool HybridController::isDrop() {
 }
 
 bool HybridController::shouldSwitch(const AudioFeatures& features) {
+    Debug::logf(Debug::DEBUG, "Switch check - Auto: %d, BPM: %.1f", autoSwitch, features.bpm);
+
     if (!autoSwitch) {
+        Debug::log(Debug::DEBUG, "Auto-switch disabled");
         currentReason = ModeKeepReason::DISABLED_;
         return false;
     }
 
     unsigned long now = millis();
+    unsigned long timeSinceLastSwitch = now - lastSwitchTime;
+    Debug::logf(Debug::DEBUG, "Time since last switch: %lu ms", timeSinceLastSwitch);
+
     float bpm = features.bpm > 0 ? features.bpm : 120;
     const unsigned long ABS_MIN = 6000;
     unsigned long beatDuration = 1000 * (60.0 / bpm) * 8;
@@ -53,7 +59,7 @@ bool HybridController::shouldSwitch(const AudioFeatures& features) {
     bool beatStable = debounceCounter >= 3;
 
     if (isBuildUp()) {
-        debounceCounter = 0;
+        Debug::log(Debug::DEBUG, "Build-up detected, holding pattern");
         currentReason = ModeKeepReason::BUILDUP;
         return false;
     }
@@ -79,10 +85,11 @@ bool HybridController::shouldSwitch(const AudioFeatures& features) {
 }
 
 void HybridController::performSwitch() {
+    Debug::logf(Debug::INFO, "Switching animation from index %d", animationManager.getCurrentIndex());
     animationManager.next();
+    Debug::logf(Debug::INFO, "Switched to animation index %d", animationManager.getCurrentIndex());
     lastSwitchTime = millis();
     debounceCounter = 0;
-    DEBUG_PRINTLN("[HybridController] Switched animation.");
 }
 
 void HybridController::update(const AudioFeatures& features) {
