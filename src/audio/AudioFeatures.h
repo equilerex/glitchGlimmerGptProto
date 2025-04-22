@@ -12,6 +12,7 @@ struct AudioFeatures {
     int loudness = 0;
     bool beatDetected = false;
 
-    float* waveform = nullptr;
+    const int16_t* waveform = nullptr;
+    int waveformSize;  // Add this field
     double spectrum[NUM_SAMPLES / 2] = {0.0};
 };

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../audio/AudioFeatures.h"
-#include "../pipeline/AnimationPipeline.h"
 #include "../core/Debug.h"
+#include "core/LEDStripController.h"
 
 enum class ModeKeepReason {
     NONE,
@@ -17,8 +17,8 @@ enum class ModeKeepReason {
 
 class HybridController {
 public:
-    HybridController(AnimationManager* manager)
-        : animationManager(*manager), lastSwitchTime(millis()) {}
+    HybridController(LEDStripController* controller)
+        : ledController(*controller), lastSwitchTime(millis()) {}
 
     void update() {
         AudioFeatures empty = {};
@@ -110,31 +110,22 @@ public:
     }
 
     void performSwitch() {
-        Debug::logf(Debug::INFO, "Switching animation from index %d", animationManager.getCurrentIndex());
-        animationManager.next();
-        Debug::logf(Debug::INFO, "Switched to animation index %d", animationManager.getCurrentIndex());
+        ledController.switchAllAnimations();
+
         lastSwitchTime = millis();
         debounceCounter = 0;
     }
 
     void next() {
-        animationManager.next();
+        ledController.switchAllAnimations();
         lastSwitchTime = millis();
         currentReason = ModeKeepReason::NONE;
     }
 
-    void previous() {
-        animationManager.previous();
-        lastSwitchTime = millis();
-        currentReason = ModeKeepReason::NONE;
-    }
 
     void toggleAuto() { autoSwitch = !autoSwitch; }
     bool isAutoSwitchEnabled() const { return autoSwitch; }
 
-    const String getCurrentName() const { return animationManager.getCurrentName(); }
-    int getCurrentIndex() const { return animationManager.getCurrentIndex(); }
-    int getAnimationCount() const { return animationManager.getAnimationCount(); }
 
     ModeKeepReason getModeKeepReason() const { return currentReason; }
     String getModeKeepReasonText() const {
@@ -151,7 +142,7 @@ public:
     }
 
 private:
-    AnimationManager& animationManager;
+    LEDStripController& ledController;
     bool autoSwitch = true;
     unsigned long lastSwitchTime;
     int debounceCounter = 0;

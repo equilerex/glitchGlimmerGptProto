@@ -5,8 +5,8 @@
 
 class ButtonInput {
 public:
-    ButtonInput(HybridController* controller, uint8_t pin1, uint8_t pin2)
-        : hybrid(controller), button1Pin(pin1), button2Pin(pin2) {}
+    ButtonInput(HybridController& controller, uint8_t pin1, uint8_t pin2)
+        : hybrid(&controller), button1Pin(pin1), button2Pin(pin2) {}
 
     void begin() {
         pinMode(button1Pin, INPUT_PULLUP);
@@ -20,7 +20,7 @@ public:
         unsigned long now = millis();
 
         if (b1 && now - lastPress1 > debounceDelay) {
-            hybrid->previous();
+            //hybrid->previous();
             lastPress1 = now;
         }
 

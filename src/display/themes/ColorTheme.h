@@ -1,7 +1,10 @@
 #pragma once
+
 #include <stdint.h>
 #include <TFT_eSPI.h>
+#include "../../config/Config.h"
 
+// Define the
 struct WidgetColorTheme {
     // General theme colors
     uint16_t primary;
@@ -23,7 +26,7 @@ struct WidgetColorTheme {
 };
 
 // Cyberpunk palette with audio-feature mapping
-static WidgetColorTheme CyberpunkTheme = {
+static const WidgetColorTheme CyberpunkTheme = {
     .primary = TFT_MAGENTA,
     .secondary = TFT_PURPLE,
     .text = TFT_YELLOW,
@@ -40,7 +43,7 @@ static WidgetColorTheme CyberpunkTheme = {
 };
 
 // Blade Runner style (just an example, tweak as needed)
-static WidgetColorTheme BladeRunnerTheme = {
+static const WidgetColorTheme BladeRunnerTheme = {
     .primary = TFT_ORANGE,
     .secondary = TFT_SKYBLUE,
     .text = TFT_WHITE,
@@ -55,3 +58,14 @@ static WidgetColorTheme BladeRunnerTheme = {
     .powerColor = TFT_RED,
     .waveformColor = TFT_WHITE
 };
+
+// Function to get theme based on config
+const WidgetColorTheme& getTheme() {
+    if (THEME == "BLADERUNNER") {
+        return BladeRunnerTheme;
+    } else if (THEME == "CYBERPUNK") {
+        return CyberpunkTheme;
+    } else {
+        return CyberpunkTheme;
+    }
+}

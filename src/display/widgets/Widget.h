@@ -3,13 +3,9 @@
 #include <Arduino.h>
 #include "../../core/Debug.h"
 #include <functional>
+#include "../themes/ColorTheme.h"
 
 
-struct WidgetColorTheme {
-    uint16_t primary = TFT_WHITE;
-    uint16_t secondary = TFT_DARKGREY;
-    uint16_t powerColor = TFT_RED;
-};
 
 class Widget {
 public:
@@ -27,17 +23,18 @@ private:
     String label;
     float normalizedValue;
     uint16_t barColor;
+    WidgetColorTheme theme;
 
 public:
     VerticalBarWidget(String l, float val, uint16_t col = TFT_GREEN)
-        : label(l), normalizedValue(val), barColor(col) {}
+        : label(l), normalizedValue(val), barColor(col), theme(CyberpunkTheme) {}
 
     void draw(TFT_eSPI& tft, int x, int y, int width, int height) override {
         int barHeight = normalizedValue * height;
-        tft.fillRect(x, y, width, height, TFT_DARKGREY);
+        tft.fillRect(x, y, width, height, theme.barBg);
         tft.fillRect(x, y + height - barHeight, width, barHeight, barColor);
 
-        tft.setTextColor(TFT_WHITE);
+        tft.setTextColor(theme.text);
         tft.setTextSize(1);
         tft.setRotation(1);
         tft.setCursor(y + 4, x + 4);
@@ -100,6 +97,10 @@ public:
             tft.drawLine(x + i, baseY, x + i, currentY, waveColor);
             if (i > 0) tft.drawLine(x + i - 1, lastY, x + i, currentY, waveColor);
             lastY = currentY;
+
+            if (i % 10 == 0) {
+                yield(); // Allow other tasks to run
+            }
         }
 
         if (pulseIntensity > 0) {
@@ -131,8 +132,13 @@ private:
 
 class AcronymValueWidget : public Widget {
 public:
-    AcronymValueWidget(const String& label, std::function<int()> valueFn, bool highlight = false)
-        : label(label.isEmpty() ? "---" : label), getValue(valueFn), highlight(highlight) {}
+    // String value constructor
+    AcronymValueWidget(const String& label, const String& value, bool highlight = false)
+        : label(label.isEmpty() ? "---" : label), stringValue(value), isStringValue(true), highlight(highlight) {}
+    
+    // Integer value constructor
+    AcronymValueWidget(const String& label, int value, bool highlight = false)
+        : label(label.isEmpty() ? "---" : label), intValue(value), isStringValue(false), highlight(highlight) {}
 
     void draw(TFT_eSPI& tft, int x, int y, int width, int height) override {
         const uint16_t bgColor = highlight ? TFT_BLACK : TFT_BLACK;
@@ -145,11 +151,18 @@ public:
 
         tft.setTextSize(2);
         tft.setTextColor(highlight ? TFT_RED : TFT_CYAN);
-        int val = getValue ? getValue() : 0;
         int valueY = y + (height - 16) / 2;
-        int valueX = x + (width - 12) / 2;
-        tft.setCursor(valueX, valueY);
-        tft.print(val);
+        int valueX;
+        
+        if (isStringValue) {
+            valueX = x + (width - stringValue.length() * 12) / 2;
+            tft.setCursor(valueX, valueY);
+            tft.print(stringValue);
+        } else {
+            valueX = x + (width - String(intValue).length() * 12) / 2;
+            tft.setCursor(valueX, valueY);
+            tft.print(intValue);
+        }
     }
 
     int getMinWidth() const override { return 60; }
@@ -157,12 +170,15 @@ public:
 
 private:
     String label;
-    std::function<int()> getValue;
+    String stringValue;
+    int intValue;
+    bool isStringValue;
     bool highlight;
 };
 
 
 
+/*
 class ScrollingTextWidget : public Widget {
 public:
     ScrollingTextWidget(std::function<String()> textFn)
@@ -191,4 +207,4 @@ private:
     std::function<String()> getText;
     int scrollOffset = 0;
     int scrollCounter = 0;
-};
+};*/

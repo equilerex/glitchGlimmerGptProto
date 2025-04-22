@@ -1,6 +1,4 @@
-#include <FastLED.h>
-#pragma once
-
+#define THEME        "CYBERPUNK"       // Sampling rate in Hz
 
 // ==== AUDIO ====
 #define SAMPLE_RATE        44100       // Sampling rate in Hz
@@ -9,19 +7,44 @@
 #define I2S_SCK            27          // Bit clock pin
 #define I2S_WS             26          // Word select (LR clock)
 #define I2S_SD             32          // Serial data input (from mic)
-#define LED_PIN            25
+
 // ==== LED ====
+
+#define DEFAULT_BRIGHTNESS 128         // Default brightness
+
+#define LED_0_PIN            25
+#define LED_1_PIN            12
+// #define LED_2_PIN            25
+// #define LED_3_PIN            25
+// #define LED_4_PIN            25
+// #define LED_5_PIN            25
+// #define LED_6_PIN            25
+// #define LED_7_PIN            25
+// #define LED_8_PIN            25
+// #define LED_9_PIN            25
+
+
+#define LED_0_NUM 100
+#define LED_1_NUM 10
+#define LED_2_NUM 0
+#define LED_3_NUM 0
+#define LED_4_NUM 0
+#define LED_5_NUM 0
+#define LED_6_NUM 0
+#define LED_7_NUM 0
+#define LED_8_NUM 0
+#define LED_9_NUM 0
+
+
+
+
 
 //cant put this in the array, needs to be defined on compile
 #define MIN_SWITCH_INTERVAL 10000
 
-#define DEFAULT_BRIGHTNESS 128         // Default brightness
 
-#define LED_STRIP_PIN_1  25
-#define LED_STRIP_COUNT_1  100
 
-#define LED_STRIP_PIN_2  12
-#define LED_STRIP_COUNT_2  60
+
 
 // ==== MEMORY MANAGEMENT ====
 #define ENABLE_HEAP_MONITORING true
@@ -57,8 +80,4 @@
 // Fallback for std::make_unique if not available
 #if __cplusplus < 201402L
 #include <memory>
-template <typename T, typename... Args>
-std::unique_ptr<T> make_unique(Args&&... args) {
-    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-}
 #endif

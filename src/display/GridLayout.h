@@ -1,60 +1,73 @@
 #pragma once
 
-#include <TFT_eSPI.h>
 #include <vector>
-#include <functional>
+#include <memory>
+#include <TFT_eSPI.h>
 #include "widgets/Widget.h"
 
 class GridLayout {
-public:
-    GridLayout(TFT_eSPI& tft) : display(tft) {}
+private:
+    int _width, _height;
+    static constexpr size_t MAX_WIDGETS = 16;
+    std::vector<std::unique_ptr<Widget>> widgets;
 
-    void begin() {
-        display.fillScreen(TFT_BLACK);
+public:
+    GridLayout(int screenWidth, int screenHeight) 
+        : _width(screenWidth), _height(screenHeight) {
+        clear();
     }
 
-    void setPadding(int p) {
-        padding = p;
+    void clear() {
+        widgets.clear();
     }
 
     void addWidget(Widget* widget) {
-        widgets.push_back(widget);
-    }
-
-    void setTemporaryOverride(std::function<void(TFT_eSPI&)> drawOverride) {
-        overrideDraw = drawOverride;
-        overrideUntil = millis() + overrideDuration;
-    }
-
-    void update() {
-        if (overrideDraw && millis() < overrideUntil) {
-            overrideDraw(display);
-            return;
+        if (widgets.size() < MAX_WIDGETS && widget != nullptr) {
+            widgets.push_back(std::unique_ptr<Widget>(widget));
         }
+    }
 
-        display.fillScreen(TFT_BLACK);
-
-        int columns = 3;
-        int rows = (widgets.size() + columns - 1) / columns;
-
-        int cellW = display.width() / columns;
-        int cellH = display.height() / rows;
+    void draw(TFT_eSPI& tft) {
+        tft.fillScreen(TFT_BLACK); // Clear screen
+        int x = 0, y = 0;
+        int rowHeight = 0;
 
         for (size_t i = 0; i < widgets.size(); ++i) {
-            int x = (i % columns) * cellW + padding;
-            int y = (i / columns) * cellH + padding;
-            int w = cellW - 2 * padding;
-            int h = cellH - 2 * padding;
-            widgets[i]->draw(display, x, y, w, h);
+            Widget* widget = widgets[i].get();
+            if (!widget) continue;
+
+            int w = widget->getMinWidth();
+            int h = widget->getMinHeight();
+
+            if (x + w > _width) {
+                x = 0;
+                y += rowHeight;
+                rowHeight = 0;
+            }
+
+            widget->draw(tft, x, y, w, h);
+            yield(); // Allow other tasks to run
+            x += w;
+            if (h > rowHeight) rowHeight = h;
         }
     }
 
-private:
-    TFT_eSPI& display;
-    std::vector<Widget*> widgets;
-    int padding = 4;
+    void drawVerticalStack(TFT_eSPI& tft) {
+        int y = 0;
+        int widgetWidth = _width;
+        const int margin = 2;
 
-    std::function<void(TFT_eSPI&)> overrideDraw = nullptr;
-    unsigned long overrideUntil = 0;
-    const unsigned long overrideDuration = 3000;
+        for (size_t i = 0; i < widgets.size(); ++i) {
+            Widget* widget = widgets[i].get();
+            if (!widget) continue;
+
+            int widgetHeight = widget->getMinHeight();
+            widget->draw(tft, 0, y, widgetWidth, widgetHeight);
+            y += widgetHeight + margin;
+        }
+    }
+
+    void update(TFT_eSPI& tft) {
+        draw(tft);
+    }
 };

@@ -3,7 +3,6 @@
 #include <Arduino.h>
 #include "../config/Config.h"
 #include <esp_system.h>
-#include <esp_int_wdt.h>
 #include <esp_task_wdt.h>
 
 // Debug utility class for more control over logging
