@@ -73,6 +73,8 @@ public:
         animationManager1.update(features);
         animationManager2.update(features);
 
+        FastLED.show();
+
         displayManager.update(features,
                               animationManager1.getCurrentName(),
                               animationManager1.getCurrentIndex(),
@@ -84,9 +86,8 @@ public:
 private:
     TFT_eSPI tft;
     AudioProcessor audioProcessor;
-    DisplayManager display;
-    EncoderInput encoder;
-    SettingsManager settingsManager;
+    DisplayManager displayManager;
+    EncoderInput encoderInput; 
 
     AnimationManager animationManager1;
     AnimationManager animationManager2;
@@ -94,8 +95,7 @@ private:
     AudioFeatures features;
 
     HybridController hybridController1;
-    hybridController2;
-    HybridControllerplayManager displayManager;
+    HybridController hybridController2;
     ButtonInput buttonInput;
     WebUI webUI;
 };

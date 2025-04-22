@@ -4,8 +4,8 @@
 #include "../audio/AudioFeatures.h"
 #include "../core/SettingsManager.h"
 #include "../control/HybridController.h"
-#include "../display/widgets/Widget.h" 
-#include "GridLayout.h"
+#include "../display/widgets/Widget.h"
+#include "../display/GridLayout.h"
 
 class DisplayManager {
 public:
@@ -22,19 +22,19 @@ public:
         // Shared theme
         WidgetColorTheme theme;
 
-        // Add basic indicator widgets
-        layout.addWidget(new AcronymValueWidget("VOL", [] { return static_cast<int>(currentFeatures.volume * 100); }));
-        layout.addWidget(new AcronymValueWidget("PWR", [] { return currentFeatures.loudness; }));
-        layout.addWidget(new AcronymValueWidget("BPM", [] { return static_cast<int>(currentFeatures.bpm); }));
-        layout.addWidget(new AcronymValueWidget("BT", [] { return currentFeatures.beatDetected ? 1 : 0; }));
+        // Add basic indicator widgets with dummy initial values
+        layout.addWidget(new AcronymValueWidget("VOL", 0));
+        layout.addWidget(new AcronymValueWidget("PWR", 0));
+        layout.addWidget(new AcronymValueWidget("BPM", 0));
+        layout.addWidget(new AcronymValueWidget("BT", 0));
 
         // Add vertical bars for bands
-        layout.addWidget(new VerticalBarWidget("BASS", [] { return currentFeatures.bass; }));
-        layout.addWidget(new VerticalBarWidget("MID", [] { return currentFeatures.mid; }));
-        layout.addWidget(new VerticalBarWidget("TREB", [] { return currentFeatures.treble; }));
+        layout.addWidget(new VerticalBarWidget("BASS", 0.0f));
+        layout.addWidget(new VerticalBarWidget("MID", 0.0f));
+        layout.addWidget(new VerticalBarWidget("TREB", 0.0f));
 
         // Waveform
-        layout.addWidget(new WaveformWidget([] { return currentFeatures.waveform; }, NUM_SAMPLES, theme, true));
+        layout.addWidget(new WaveformWidget(nullptr, NUM_SAMPLES, theme, true));
     }
 
     void update(const AudioFeatures& features,
@@ -75,8 +75,9 @@ private:
     TFT_eSPI& tft;
     GridLayout layout;
 
-    static inline AudioFeatures currentFeatures = {};
-    static inline String currentAnimName = "";
-    static inline bool currentAutoMode = false;
-    static inline String currentModeReason = "";
+    // Remove 'inline' from these static variables
+    static AudioFeatures currentFeatures;
+    static String currentAnimName;
+    static bool currentAutoMode;
+    static String currentModeReason;
 };
