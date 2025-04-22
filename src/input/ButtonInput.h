@@ -1,41 +1,40 @@
 #pragma once
+
 #include <Arduino.h>
-#include "../config/Config.h"
-#include <Button2.h>
-#include "../core/HybridController.h"
+#include "../control/HybridController.h"
 
 class ButtonInput {
-private:
-    uint8_t buttonPin1;
-    uint8_t buttonPin2;
-    bool lastState = HIGH;
-    unsigned long lastDebounceTime = 0;
-    const unsigned long debounceDelay = 50;
-    Button2 nextModeBtn;
-    Button2 autoModeBtn;
-    HybridController& hybridController;
-
 public:
-    ButtonInput(HybridController* hybrid, uint8_t pin1, uint8_t pin2) :
-                                    hybridController(*hybrid),
-                                    buttonPin1(pin1),
-                                    buttonPin2(pin2),
-                                    nextModeBtn(pin1),
-                                    autoModeBtn(pin2) {}
+    ButtonInput(HybridController* controller, uint8_t pin1, uint8_t pin2)
+        : hybrid(controller), button1Pin(pin1), button2Pin(pin2) {}
 
     void begin() {
-        nextModeBtn.setPressedHandler([this](Button2 &btn) {
-            hybridController.next();
-        });
-
-        autoModeBtn.setPressedHandler([this](Button2 &btn) {
-            hybridController.toggleAuto();
-        });
+        pinMode(button1Pin, INPUT_PULLUP);
+        pinMode(button2Pin, INPUT_PULLUP);
     }
 
-    bool update() {
-        nextModeBtn.loop();
-        autoModeBtn.loop();
-        return true;
+    void update() {
+        bool b1 = digitalRead(button1Pin) == LOW;
+        bool b2 = digitalRead(button2Pin) == LOW;
+
+        unsigned long now = millis();
+
+        if (b1 && now - lastPress1 > debounceDelay) {
+            hybrid->previous();
+            lastPress1 = now;
+        }
+
+        if (b2 && now - lastPress2 > debounceDelay) {
+            hybrid->next();
+            lastPress2 = now;
+        }
     }
+
+private:
+    HybridController* hybrid;
+    uint8_t button1Pin;
+    uint8_t button2Pin;
+    unsigned long lastPress1 = 0;
+    unsigned long lastPress2 = 0;
+    static constexpr unsigned long debounceDelay = 250;
 };

@@ -1,42 +1,82 @@
 #pragma once
 
 #include <TFT_eSPI.h>
-#include "../audio/AudioProcessor.h"
+#include "../audio/AudioFeatures.h"
+#include "../core/SettingsManager.h"
+#include "../control/HybridController.h"
+#include "../display/widgets/Widget.h" 
 #include "GridLayout.h"
-#include "themes/ColorTheme.h"
-
-// Forward declarations
-class HybridController;
 
 class DisplayManager {
+public:
+    DisplayManager(TFT_eSPI& display) : tft(display), layout(display) {}
+
+    void begin() {
+        tft.init();
+        tft.setRotation(1);
+        tft.fillScreen(TFT_BLACK);
+
+        layout.begin();
+        layout.setPadding(4);
+
+        // Shared theme
+        WidgetColorTheme theme;
+
+        // Add basic indicator widgets
+        layout.addWidget(new AcronymValueWidget("VOL", [] { return static_cast<int>(currentFeatures.volume * 100); }));
+        layout.addWidget(new AcronymValueWidget("PWR", [] { return currentFeatures.loudness; }));
+        layout.addWidget(new AcronymValueWidget("BPM", [] { return static_cast<int>(currentFeatures.bpm); }));
+        layout.addWidget(new AcronymValueWidget("BT", [] { return currentFeatures.beatDetected ? 1 : 0; }));
+
+        // Add vertical bars for bands
+        layout.addWidget(new VerticalBarWidget("BASS", [] { return currentFeatures.bass; }));
+        layout.addWidget(new VerticalBarWidget("MID", [] { return currentFeatures.mid; }));
+        layout.addWidget(new VerticalBarWidget("TREB", [] { return currentFeatures.treble; }));
+
+        // Waveform
+        layout.addWidget(new WaveformWidget([] { return currentFeatures.waveform; }, NUM_SAMPLES, theme, true));
+    }
+
+    void update(const AudioFeatures& features,
+                const String& currentAnimationName,
+                int currentIndex,
+                int total,
+                bool autoMode,
+                const String& modeKeepReason) {
+        currentFeatures = features;
+        currentAnimName = currentAnimationName;
+        currentAutoMode = autoMode;
+        currentModeReason = modeKeepReason;
+
+        layout.update();
+    }
+
+    void showSetting(Setting setting, int value) {
+        layout.setTemporaryOverride([=](TFT_eSPI& tft) {
+            tft.fillScreen(TFT_BLACK);
+            tft.setCursor(0, 20);
+            tft.setTextColor(TFT_YELLOW);
+            tft.setTextSize(2);
+            tft.printf("%s\n%d", settingToLabel(setting), value);
+        });
+    }
+
 private:
-    TFT_eSPI& _tft;
+    const char* settingToLabel(Setting s) {
+        switch (s) {
+            case Setting::BRIGHTNESS: return "Brightness";
+            case Setting::SPEED: return "Speed";
+            case Setting::HUE: return "Hue";
+            case Setting::SATURATION: return "Saturation";
+            default: return "Unknown";
+        }
+    }
+
+    TFT_eSPI& tft;
     GridLayout layout;
 
-    // Setting screen state
-    bool showSettingScreen = false;
-    bool loading = true;
-    String activeSettingName = "";
-    int activeSettingValue = 0;
-    unsigned long settingDisplayTime = 0;
-    WidgetColorTheme theme;  
-    bool errorState = false;
-    String errorMessage;
-    String currentAnimationName;
-
-public:
-    DisplayManager(TFT_eSPI& display);
-
-    void setTheme(const WidgetColorTheme& newTheme);
-    void begin();
-    void showStartupScreen();
-    void update(const AudioFeatures& features, const String& animName, 
-                int animIndex, int animCount, bool autoSwitch, String keepReason);
-    void updateAudioVisualization(const AudioFeatures& features, int animIndex, int animCount, bool autoSwitch, String keepReason);
-    void showSetting(const String& name, int value);
-    void drawSettingScreen();
-    void showError(const String& message);
-    void setCurrentAnimation(const String& name);
-    void clearError();
-    bool hasError() const { return errorState; }
+    static inline AudioFeatures currentFeatures = {};
+    static inline String currentAnimName = "";
+    static inline bool currentAutoMode = false;
+    static inline String currentModeReason = "";
 };

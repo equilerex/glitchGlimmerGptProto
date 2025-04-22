@@ -8,6 +8,11 @@
         {
             "name": "PlatformIO",
             "includePath": [
+                     "${workspaceFolder}/**",
+
+     "D:/ESP32 projects/GlitchGlitter/chatgpt/glitchGlimmerGptProto/src/audio",
+
+      "D:/ESP32 projects/GlitchGlitter/chatgpt/glitchGlimmerGptProto/src/core",
                 "d:/ESP32 projects/GlitchGlitter/chatgpt/glitchGlimmerGptProto/include",
                 "d:/ESP32 projects/GlitchGlitter/chatgpt/glitchGlimmerGptProto/src",
                 "C:/Users/Joosep/Documents/Arduino/libraries/Encoder",

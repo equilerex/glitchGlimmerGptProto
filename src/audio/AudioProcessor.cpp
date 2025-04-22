@@ -1,18 +1,17 @@
 #include "AudioProcessor.h"
-#include "Config.h"
 #include "../core/Debug.h"
+#include "../config/Config.h"
 
-AudioProcessor::AudioProcessor()
-    : previousVolume(0.0), lastBeatTime(0), currentBPM(0.0),
-      normalizedVolume(0.0), rollingMin(1.0), rollingMax(0.0),
-      FFT(nullptr), zeroSamplesCount(0), microphoneError(false)
-{
-    FFT = new ArduinoFFT<double>(vReal, vImag, NUM_SAMPLES, SAMPLE_RATE);
+AudioProcessor::AudioProcessor() {
+    // Initialize volume history tracking
+    volumeHistoryIndex = 0;
+    volumeHistoryCount = 0;
+    for (int i = 0; i < VOLUME_HISTORY_SIZE; ++i) {
+        volumeHistory[i] = 0.0f;
+    }
 }
 
-AudioProcessor::~AudioProcessor() {
-    delete FFT;
-}
+AudioProcessor::~AudioProcessor() {}
 
 void AudioProcessor::begin() {
     const i2s_config_t i2s_config = {
@@ -39,157 +38,65 @@ void AudioProcessor::begin() {
     i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
     i2s_set_pin(I2S_PORT, &pin_config);
     i2s_start(I2S_PORT);
-}
 
-void AudioProcessor::resetI2S() {
-    Serial.println("[AudioProcessor] Resetting I2S interface");
-
-    // Uninstall the current driver
-    i2s_driver_uninstall(I2S_PORT);
-
-    // Reconfigure I2S
-    i2s_config_t i2s_config = {
-        .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
-        .sample_rate = SAMPLE_RATE,
-        .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
-        .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
-        .communication_format = I2S_COMM_FORMAT_STAND_I2S, // Updated format
-        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-        .dma_buf_count = 8,
-        .dma_buf_len = 64,
-        .use_apll = false,
-        .tx_desc_auto_clear = false,
-        .fixed_mclk = 0
-    };
-
-    i2s_pin_config_t pin_config = {
-        .bck_io_num = I2S_SCK,
-        .ws_io_num = I2S_WS,
-        .data_out_num = I2S_PIN_NO_CHANGE,
-        .data_in_num = I2S_SD
-    };
-
-    // Reinstall the driver
-    esp_err_t result = i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
-    if (result != ESP_OK) {
-        Serial.printf("[AudioProcessor] Error reinstalling I2S driver: %d\n", result);
-    }
-
-    result = i2s_set_pin(I2S_PORT, &pin_config);
-    if (result != ESP_OK) {
-        Serial.printf("[AudioProcessor] Error resetting I2S pins: %d\n", result);
-    }
-
-    // Discard any initial data
-    size_t bytesRead = 0;
-    int32_t dummyBuffer[64];
-    i2s_read(I2S_PORT, dummyBuffer, sizeof(dummyBuffer), &bytesRead, 0);
-
-    Serial.println("[AudioProcessor] I2S reset complete");
+    // Reset volume history at start
+    volumeHistoryIndex = 0;
+    volumeHistoryCount = 0;
+    for (int i = 0; i < VOLUME_HISTORY_SIZE; ++i) {
+        volumeHistory[i] = 0.0f;
+    } 
 }
 
 void AudioProcessor::captureAudio() {
-    Serial.println("[AudioProcessor] captureAudio() called");
     size_t bytesRead = 0;
     static int32_t i2sBuffer[NUM_SAMPLES]; // Static buffer to avoid stack overuse
-
-    // Clear buffer before reading to detect if read operation fails
-    memset(i2sBuffer, 0, sizeof(i2sBuffer));
-
-    // Read from I2S with 100ms timeout instead of portMAX_DELAY to prevent hanging
-    esp_err_t read_result = i2s_read(I2S_PORT, (void*)i2sBuffer, sizeof(i2sBuffer), &bytesRead, 100 / portTICK_PERIOD_MS);
-
-    if (read_result != ESP_OK) {
-        Serial.printf("[AudioProcessor] Error reading from I2S: %d\n", read_result);
-    }
+    i2s_read(I2S_PORT, (void*)i2sBuffer, sizeof(i2sBuffer), &bytesRead, portMAX_DELAY);
 
     int samplesRead = bytesRead / sizeof(int32_t);
 
-    // Check if we're getting any non-zero data
-    bool hasNonZeroData = false;
-    for (int i = 0; i < samplesRead; i++) {
-        if (i2sBuffer[i] != 0) {
-            hasNonZeroData = true;
-            break;
-        }
-    }
-
-    if (!hasNonZeroData) {
-        zeroSamplesCount++;
-        if (zeroSamplesCount >= MAX_ZERO_SAMPLES_THRESHOLD) {
-            microphoneError = true;
-            Debug::log(Debug::ERROR, "No audio input detected - check microphone connection");
-            resetI2S();  // Try to recover
-            zeroSamplesCount = 0;  // Reset counter after recovery attempt
-        }
-    } else {
-        zeroSamplesCount = 0;
-        microphoneError = false;
-    }
-
-    if (!hasNonZeroData) {
-        Serial.println("[AudioProcessor] WARNING: All samples are zero - check microphone connection");
-    }
-
-    // Print first few samples for debugging
-    for (int i = 0; i < 10 && i < samplesRead; i++) {
+    /*for (int i = 0; i < 10 && i < samplesRead; i++) {
+        // prove that data is being read
         Serial.printf("i2sBuffer[%d]=%ld\n", i, i2sBuffer[i]);
-    }
+    }*/
 
-    // Calculate maximum sample value to check signal level
-    int32_t maxSample = 0;
     for (int i = 0; i < samplesRead && i < NUM_SAMPLES; i++) {
-        int32_t absVal = abs(i2sBuffer[i]);
-        if (absVal > maxSample) maxSample = absVal;
-
-        // INMP441 and similar I2S mics produce 24-bit audio in MSB format
-        // For proper normalization we need to:
-        // 1) Left-align the 24-bit value to get proper sign
-        // 2) Then convert to float in -1.0 to 1.0 range
-        float normalized = (float)i2sBuffer[i] / 8388608.0f;  // 2^23 = 8388608
+        float normalized = i2sBuffer[i] / 8388608.0f;  // Normalize 24-bit signed PCM
         vReal[i] = normalized;
         vImag[i] = 0.0;
         buffer[i] = (int16_t)(normalized * 32767);  // For waveform
     }
 
-    Serial.printf("[AudioProcessor] Max sample value: %ld (%.2f%%)\n",
-                 maxSample, (maxSample * 100.0 / 8388608.0));
-
-    // Fallback fill if we couldn't read enough samples
+    // Fallback fill
     if (samplesRead < NUM_SAMPLES) {
-        Serial.printf("[AudioProcessor] Warning: Only read %d of %d samples\n", samplesRead, NUM_SAMPLES);
         memset(vReal + samplesRead, 0, (NUM_SAMPLES - samplesRead) * sizeof(double));
         memset(vImag + samplesRead, 0, (NUM_SAMPLES - samplesRead) * sizeof(double));
         memset(buffer + samplesRead, 0, (NUM_SAMPLES - samplesRead) * sizeof(int16_t));
     }
-
-    Serial.printf("[AudioProcessor] samplesRead: %d\n", samplesRead);
+    // prove that data is being read
+    // Serial.printf("[AudioProcessor] samplesRead: %d\n", samplesRead);
 }
 
 AudioFeatures AudioProcessor::analyzeAudio() {
-    if (microphoneError) {
-        Debug::log(Debug::ERROR, "Skipping audio analysis due to microphone error");
-        AudioFeatures emptyFeatures = {};  // Return zero-initialized features
-        return emptyFeatures;
+    AudioFeatures features = {};
+    // Ensure we have valid data in vReal (check if any sample is non-zero)
+    bool hasValidData = false;
+    for (int i = 0; i < NUM_SAMPLES; ++i) {
+        if (vReal[i] != 0.0f) { hasValidData = true; break; }
+    }
+    if (!hasValidData) {
+        Debug::log(Debug::DEBUG, "No valid audio data for analysis");
+        return features;
     }
 
-    Serial.println("[AudioProcessor] analyzeAudio() called");
-    AudioFeatures features = {};
-
-    // Set the waveform pointer to the buffer
-    features.waveform = buffer;
-    Serial.printf("[AudioProcessor] Setting waveform pointer: %p\n", (void*)features.waveform);
-
-    // Volume (RMS)
+    // Compute loudness (volume) via RMS
     double sumSquares = 0.0;
-    for (int i = 0; i < NUM_SAMPLES; i++) {
-        vReal[i] = constrain(vReal[i], -1.0f, 1.0f);
+    for (int i = 0; i < NUM_SAMPLES; ++i) {
+        // vReal[i] is already constrained to [-1,1]
         sumSquares += vReal[i] * vReal[i];
     }
+    double meanSquare = sumSquares / NUM_SAMPLES;
+    features.volume = sqrt(meanSquare);  // RMS volume in 0.0 to 1.0 range
 
-    double rawVolume = sqrt(sumSquares / NUM_SAMPLES);
-    normalizedVolume = gainSmoothing * normalizedVolume + (1 - gainSmoothing) * rawVolume;
-    features.volume = normalizedVolume;
 
     // Loudness: scale volume to 0–100
     static float smoothedLoudness = 0;
@@ -249,5 +156,106 @@ AudioFeatures AudioProcessor::analyzeAudio() {
 
     previousVolume = features.volume;
     Serial.printf("[AudioProcessor] Returning features: %p\n", (void*)&features);
+
+
+    // **Update volume history for build-up/drop detection**
+    // Add the latest volume to the circular history buffer
+    volumeHistory[volumeHistoryIndex] = features.volume;
+    volumeHistoryIndex = (volumeHistoryIndex + 1) % VOLUME_HISTORY_SIZE;
+    if (volumeHistoryCount < VOLUME_HISTORY_SIZE) {
+        volumeHistoryCount++;
+    }
+
+    // (Optional: smooth the volume if needed by averaging with previous values – not applied here for responsiveness)
+
+    // Debug log beat detection if any (ensure beat detection logic is preserved)
+    if (features.beatDetected) {
+        Debug::logf(Debug::DEBUG, "Beat detected! BPM: %.1f", features.bpm);
+    }
+
     return features;
+}
+
+bool AudioProcessor::isBuildUp() const {
+    // Require sufficient history to judge a trend
+    if (volumeHistoryCount < VOLUME_HISTORY_SIZE / 4) {
+        // Not enough data (e.g., fewer than 16 samples in a 64-sample buffer)
+        return false;
+    }
+    int halfLen = volumeHistoryCount / 2;
+    double olderSum = 0.0, newerSum = 0.0;
+    if (volumeHistoryCount == VOLUME_HISTORY_SIZE) {
+        // Buffer is full, split into two halves in circular order
+        int oldestIndex = volumeHistoryIndex;  // index of the oldest element
+        // Sum older half
+        for (int i = 0; i < halfLen; ++i) {
+            int idx = (oldestIndex + i) % VOLUME_HISTORY_SIZE;
+            olderSum += volumeHistory[idx];
+        }
+        // Sum newer half
+        int midIndex = (oldestIndex + halfLen) % VOLUME_HISTORY_SIZE;
+        for (int i = 0; i < halfLen; ++i) {
+            int idx = (midIndex + i) % VOLUME_HISTORY_SIZE;
+            newerSum += volumeHistory[idx];
+        }
+    } else {
+        // Buffer not full yet, use first half vs second half of existing data
+        for (int i = 0; i < halfLen; ++i) {
+            olderSum += volumeHistory[i];
+        }
+        for (int i = halfLen; i < volumeHistoryCount; ++i) {
+            newerSum += volumeHistory[i];
+        }
+    }
+    double olderAvg = olderSum / halfLen;
+    double newerAvg = newerSum / (volumeHistoryCount - halfLen);
+    // Avoid division by zero in ratio calculation
+    if (olderAvg < 1e-3) {
+        olderAvg = 1e-3;
+    }
+
+    // Check if volume is significantly higher in newer segment (rising trend)
+    const float BUILDUP_RATIO = 1.3f;   // threshold for how much louder new vs old
+    const float MIN_VOLUME_DIFF = 0.1f; // minimum absolute difference to filter noise
+    bool risingFast = (newerAvg > olderAvg * BUILDUP_RATIO) && ((newerAvg - olderAvg) > MIN_VOLUME_DIFF);
+    return risingFast;
+}
+
+bool AudioProcessor::isDrop() const {
+    // Require sufficient history (same criterion as build-up)
+    if (volumeHistoryCount < VOLUME_HISTORY_SIZE / 4) {
+        return false;
+    }
+    int halfLen = volumeHistoryCount / 2;
+    double olderSum = 0.0, newerSum = 0.0;
+    if (volumeHistoryCount == VOLUME_HISTORY_SIZE) {
+        int oldestIndex = volumeHistoryIndex;
+        for (int i = 0; i < halfLen; ++i) {
+            int idx = (oldestIndex + i) % VOLUME_HISTORY_SIZE;
+            olderSum += volumeHistory[idx];
+        }
+        int midIndex = (oldestIndex + halfLen) % VOLUME_HISTORY_SIZE;
+        for (int i = 0; i < halfLen; ++i) {
+            int idx = (midIndex + i) % VOLUME_HISTORY_SIZE;
+            newerSum += volumeHistory[idx];
+        }
+    } else {
+        for (int i = 0; i < halfLen; ++i) {
+            olderSum += volumeHistory[i];
+        }
+        for (int i = halfLen; i < volumeHistoryCount; ++i) {
+            newerSum += volumeHistory[i];
+        }
+    }
+    double olderAvg = olderSum / halfLen;
+    double newerAvg = newerSum / (volumeHistoryCount - halfLen);
+    if (olderAvg < 1e-3) {
+        olderAvg = 1e-3;
+    }
+
+    // Check if volume is significantly lower in newer segment (falling trend)
+    const float DROP_RATIO = 0.7f;      // threshold for how much quieter new vs old
+    const float MIN_VOLUME_DIFF = 0.1f; // minimum absolute difference to filter noise
+    bool droppingFast = (newerAvg < olderAvg * DROP_RATIO) && ((olderAvg - newerAvg) > MIN_VOLUME_DIFF);
+    return droppingFast;
 }

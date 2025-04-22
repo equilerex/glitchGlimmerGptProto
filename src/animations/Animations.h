@@ -4,12 +4,12 @@
 #include <algorithm>
 #include <FastLED.h>
 #include "../audio/AudioProcessor.h"
-#include "BaseAnimation.h"
-
-static std::vector<int> drips;
+#include "pipeline/AnimationPipeline.h"
 
 class FirestormAnimation : public BaseAnimation {
 private:
+    CRGB* leds = nullptr;
+    int numLeds = 0;
     uint8_t* heat = nullptr;
 
 public:
@@ -17,13 +17,16 @@ public:
         return "Firestorm";
     }
 
-    FirestormAnimation() {
+    FirestormAnimation(CRGB* buffer, int count) : leds(buffer), numLeds(count) {
         // Constructor
     }
     
-    void update(const AudioFeatures& features) override {
-        if (!heat) heat = new uint8_t[numLeds]();
+    void begin() override {
+        fill_solid(leds, numLeds, CRGB::Black);
+        heat = new uint8_t[numLeds]();
+    }
 
+    void update(const AudioFeatures& features) override {
         for (int i = 0; i < numLeds; i++) {
             heat[i] = qsub8(heat[i], random8(0, constrain((features.volume * 255) / 12, 2, 10)));
         }
@@ -54,6 +57,8 @@ public:
 
 class RippleCascadeAnimation : public BaseAnimation {
 private:
+    CRGB* leds = nullptr;
+    int numLeds = 0;
     uint8_t rippleColor = 0;
     int rippleStep = -1;
 
@@ -62,8 +67,13 @@ public:
         return "Ripple Cascade";
     }
 
-    RippleCascadeAnimation() {
+    RippleCascadeAnimation(CRGB* buffer, int count) : leds(buffer), numLeds(count) {
         // Constructor
+    }
+    
+    void begin() override {
+        fill_solid(leds, numLeds, CRGB::Black);
+        rippleStep = -1;
     }
     
     void update(const AudioFeatures& features) override {
@@ -93,6 +103,8 @@ public:
 
 class ColorTunnelAnimation : public BaseAnimation {
 private:
+    CRGB* leds = nullptr;
+    int numLeds = 0;
     uint8_t hue = 0;
 
 public:
@@ -100,8 +112,12 @@ public:
         return "Color Tunnel";
     }
 
-    ColorTunnelAnimation() {
+    ColorTunnelAnimation(CRGB* buffer, int count) : leds(buffer), numLeds(count) {
         // Constructor
+    }
+    
+    void begin() override {
+        fill_solid(leds, numLeds, CRGB::Black);
     }
     
     void update(const AudioFeatures& features) override {
@@ -125,6 +141,8 @@ public:
 
 class EnergySwirlAnimation : public BaseAnimation {
 private:
+    CRGB* leds = nullptr;
+    int numLeds = 0;
     uint8_t swirl = 0;
 
 public:
@@ -132,8 +150,12 @@ public:
         return "Energy Swirl";
     }
 
-    EnergySwirlAnimation() {
+    EnergySwirlAnimation(CRGB* buffer, int count) : leds(buffer), numLeds(count) {
         // Constructor
+    }
+    
+    void begin() override {
+        fill_solid(leds, numLeds, CRGB::Black);
     }
     
     void update(const AudioFeatures& features) override {
@@ -153,6 +175,8 @@ public:
 
 class StrobeMatrixAnimation : public BaseAnimation {
 private:
+    CRGB* leds = nullptr;
+    int numLeds = 0;
     bool state = false;
     unsigned long lastChange = 0;
 
@@ -161,8 +185,13 @@ public:
         return "Strobe Matrix";
     }
 
-    StrobeMatrixAnimation() {
+    StrobeMatrixAnimation(CRGB* buffer, int count) : leds(buffer), numLeds(count) {
         // Constructor
+    }
+    
+    void begin() override {
+        fill_solid(leds, numLeds, CRGB::Black);
+        lastChange = millis();
     }
     
     void update(const AudioFeatures& features) override {
@@ -187,6 +216,8 @@ public:
 
 class BassBloomAnimation : public BaseAnimation {
 private:
+    CRGB* leds = nullptr;
+    int numLeds = 0;
     uint8_t hue = 0;
     int size = 0;
 
@@ -195,8 +226,13 @@ public:
         return "Bass Bloom";
     }
 
-    BassBloomAnimation() {
+    BassBloomAnimation(CRGB* buffer, int count) : leds(buffer), numLeds(count) {
         // Constructor
+    }
+    
+    void begin() override {
+        fill_solid(leds, numLeds, CRGB::Black);
+        size = 0;
     }
     
     void update(const AudioFeatures& features) override {
@@ -224,15 +260,23 @@ public:
 
 class ColorDripAnimation : public BaseAnimation {
 private:
+    CRGB* leds = nullptr;
+    int numLeds = 0;
     uint8_t hue = 0;
+    std::vector<int> drips;
 
 public:
     static const char* staticName() {
         return "Color Drip";
     }
 
-    ColorDripAnimation() {
+    ColorDripAnimation(CRGB* buffer, int count) : leds(buffer), numLeds(count) {
         // Constructor
+    }
+    
+    void begin() override {
+        fill_solid(leds, numLeds, CRGB::Black);
+        drips.clear();
     }
     
     void update(const AudioFeatures& features) override {
@@ -263,13 +307,21 @@ public:
 };
 
 class FrequencyRiverAnimation : public BaseAnimation {
+private:
+    CRGB* leds = nullptr;
+    int numLeds = 0;
+
 public:
     static const char* staticName() {
         return "Frequency River";
     }
 
-    FrequencyRiverAnimation() {
+    FrequencyRiverAnimation(CRGB* buffer, int count) : leds(buffer), numLeds(count) {
         // Constructor
+    }
+    
+    void begin() override {
+        fill_solid(leds, numLeds, CRGB::Black);
     }
     
     void update(const AudioFeatures& features) override {
@@ -287,6 +339,8 @@ public:
 
 class PartyPulseAnimation : public BaseAnimation {
 private:
+    CRGB* leds = nullptr;
+    int numLeds = 0;
     uint8_t hue = 0;
     int radius = 0;
 
@@ -295,8 +349,13 @@ public:
         return "Party Pulse";
     }
 
-    PartyPulseAnimation() {
+    PartyPulseAnimation(CRGB* buffer, int count) : leds(buffer), numLeds(count) {
         // Constructor
+    }
+    
+    void begin() override {
+        fill_solid(leds, numLeds, CRGB::Black);
+        radius = 0;
     }
     
     void update(const AudioFeatures& features) override {
@@ -329,6 +388,8 @@ public:
 
 class CyberFluxAnimation : public BaseAnimation {
 private:
+    CRGB* leds = nullptr;
+    int numLeds = 0;
     uint8_t hue = 0;
 
 public:
@@ -336,8 +397,12 @@ public:
         return "Cyber Flux";
     }
 
-    CyberFluxAnimation() {
+    CyberFluxAnimation(CRGB* buffer, int count) : leds(buffer), numLeds(count) {
         // Constructor
+    }
+    
+    void begin() override {
+        fill_solid(leds, numLeds, CRGB::Black);
     }
     
     void update(const AudioFeatures& features) override {
@@ -369,6 +434,8 @@ public:
 
 class BioSignalAnimation : public BaseAnimation {
 private:
+    CRGB* leds = nullptr;
+    int numLeds = 0;
     uint8_t offset = 0;
 
 public:
@@ -376,8 +443,13 @@ public:
         return "Bio Signal";
     }
 
-    BioSignalAnimation() {
+    BioSignalAnimation(CRGB* buffer, int count) : leds(buffer), numLeds(count) {
         // Constructor
+    }
+    
+    void begin() override {
+        fill_solid(leds, numLeds, CRGB::Black);
+        offset = 0;
     }
     
     void update(const AudioFeatures& features) override {
@@ -404,16 +476,24 @@ public:
     const char* getName() const override {
         return "Bio Signal";
     }
-};
+    };
 
-class ChaosEngineAnimation : public BaseAnimation {
+    class ChaosEngineAnimation : public BaseAnimation {
+private:
+    CRGB* leds = nullptr;
+    int numLeds = 0;
+    
 public:
     static const char* staticName() {
         return "Chaos Engine";
     }
 
-    ChaosEngineAnimation() {
+    ChaosEngineAnimation(CRGB* buffer, int count) : leds(buffer), numLeds(count) {
         // Constructor
+    }
+    
+    void begin() override {
+        fill_solid(leds, numLeds, CRGB::Black);
     }
     
     void update(const AudioFeatures&) override {
@@ -426,23 +506,27 @@ public:
 };
 
 class GalacticDriftAnimation : public BaseAnimation {
+private:
+    CRGB* leds = nullptr;
+    int numLeds = 0;
+    
 public:
     static const char* staticName() {
         return "Galactic Drift";
     }
 
-    GalacticDriftAnimation() {
+    GalacticDriftAnimation(CRGB* buffer, int count) : leds(buffer), numLeds(count) {
         // Constructor
+    }
+    
+    void begin() override {
+        fill_solid(leds, numLeds, CRGB::Black);
     }
     
     void update(const AudioFeatures& features) override {
         for (int i = 0; i < numLeds; i++) {
             leds[i] = CHSV((i * 4 + millis() / 5) % 255, 255, sin8(i * 3 + millis() / 7));
         }
-    }
-
-    void updateWithFeatures(const AudioFeatures& features) override {
-        update(features);
     }
 
     const char* getName() const override {
@@ -452,6 +536,8 @@ public:
 
 class AudioStormAnimation : public BaseAnimation {
 private:
+    CRGB* leds = nullptr;
+    int numLeds = 0;
     uint8_t baseHue = 0;
 
 public:
@@ -459,8 +545,13 @@ public:
         return "Audio Storm";
     }
 
-    AudioStormAnimation() {
+    AudioStormAnimation(CRGB* buffer, int count) : leds(buffer), numLeds(count) {
         // Constructor
+    }
+    
+    void begin() override {
+        fill_solid(leds, numLeds, CRGB::Black);
+        baseHue = 0;
     }
     
     void update(const AudioFeatures& features) override {
@@ -471,23 +562,27 @@ public:
         fadeToBlackBy(leds, numLeds, 10);
     }
 
-    void updateWithFeatures(const AudioFeatures& features) override {
-        update(features);
-    }
-
     const char* getName() const override {
         return "Audio Storm";
     }
 };
 
 class SpectrumWavesAnimation : public BaseAnimation {
+private:
+    CRGB* leds = nullptr;
+    int numLeds = 0;
+    
 public:
     static const char* staticName() {
         return "Spectrum Waves";
     }
 
-    SpectrumWavesAnimation() {
+    SpectrumWavesAnimation(CRGB* buffer, int count) : leds(buffer), numLeds(count) {
         // Constructor
+    }
+    
+    void begin() override {
+        fill_solid(leds, numLeds, CRGB::Black);
     }
     
     void update(const AudioFeatures& audio) override {
@@ -498,10 +593,6 @@ public:
 
             leds[i] = CHSV(t * 255, 255, level);
         }
-    }
-
-    void updateWithFeatures(const AudioFeatures& features) override {
-        update(features);
     }
 
     const char* getName() const override {

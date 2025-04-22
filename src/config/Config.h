@@ -13,15 +13,15 @@
 // ==== LED ====
 
 //cant put this in the array, needs to be defined on compile
-#define LED_STRIP_CONFIGS_1_PIN            25
-// #define LED_STRIP_CONFIGS_1_PIN          39
-// #define LED_STRIP_CONFIGS_1_PIN          38
-// #define LED_STRIP_CONFIGS_1_PIN           37
+#define MIN_SWITCH_INTERVAL 10000
 
 #define DEFAULT_BRIGHTNESS 128         // Default brightness
 
 #define LED_STRIP_PIN_1  25
-#define LED_STRIP_COUNT_1  60
+#define LED_STRIP_COUNT_1  100
+
+#define LED_STRIP_PIN_2  12
+#define LED_STRIP_COUNT_2  60
 
 // ==== MEMORY MANAGEMENT ====
 #define ENABLE_HEAP_MONITORING true
