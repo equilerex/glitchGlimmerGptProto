@@ -44,8 +44,7 @@ public:
     }
 
     void update(const AudioFeatures& features, const String& animName,
-                int animIndex, int totalAnimations, bool hybridMode,
-                const String& modeReason) {
+                int animIndex, int totalAnimations, bool hybridMode ) {
         
         
         layout.addWidget(new VerticalBarWidget("BASS", features.bass, theme.bassColor));
@@ -57,7 +56,6 @@ public:
         layout.addWidget(new AcronymValueWidget("MODE", hybridMode ? 1 : 0, hybridMode));
         layout.addWidget(new AcronymValueWidget("IDX", animIndex));
         layout.addWidget(new AcronymValueWidget("MAX", totalAnimations));
-        layout.addWidget(new AcronymValueWidget("KEEP", modeReason)); // modeReason is already a String
 
         //layout.addWidget(new ScrollingTextWidget(animName));
 
@@ -87,8 +85,8 @@ public:
 
     void updateAudioVisualization(const AudioFeatures& features,
                                   int animIndex, int totalAnimations,
-                                  bool hybridMode, const String& modeReason) {
-        update(features, currentAnimation, animIndex, totalAnimations, hybridMode, modeReason);
+                                  bool hybridMode) {
+        update(features, currentAnimation, animIndex, totalAnimations, hybridMode);
     }
 
     void showError(const String& message) {

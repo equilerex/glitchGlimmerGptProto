@@ -2,7 +2,7 @@
 
 #include "../audio/AudioFeatures.h"
 #include "../core/Debug.h"
-#include "core/LEDStripController.h"
+#include "../core/LEDStripController.h"
 
 enum class ModeKeepReason {
     NONE,
@@ -110,14 +110,14 @@ public:
     }
 
     void performSwitch() {
-        ledController.switchAllAnimations();
+       // ledController.switchAllAnimations();
 
         lastSwitchTime = millis();
         debounceCounter = 0;
     }
 
     void next() {
-        ledController.switchAllAnimations();
+       // ledController.switchAllAnimations();
         lastSwitchTime = millis();
         currentReason = ModeKeepReason::NONE;
     }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Arduino.h>
-#include "../display/DisplayManager.h"
 #include "../core/SettingsManager.h"
 
 class EncoderInput {
@@ -9,9 +8,7 @@ public:
     EncoderInput(uint8_t pinA, uint8_t pinB, uint8_t buttonPin, SettingsManager& settings)
         : pinA(pinA), pinB(pinB), buttonPin(buttonPin), settings(settings) {}
 
-    void setDisplay(DisplayManager* display) {
-        this->display = display;
-    }
+
 
     void begin() {
         pinMode(pinA, INPUT_PULLUP);
@@ -43,9 +40,9 @@ public:
         }
         wasPressed = pressed;
 
-        if (display && now - lastTurnTime < displayTimeout) {
+        /*if (display && now - lastTurnTime < displayTimeout) {
             display->showSetting(settings.getCurrentSetting(), settings.get(settings.getCurrentSetting()));
-        }
+        }*/
     }
 
 private:
@@ -57,8 +54,8 @@ private:
     unsigned long lastTurnTime = 0;
 
     static constexpr unsigned long debounce = 250;
-    static constexpr unsigned long displayTimeout = 3000;
+ //   static constexpr unsigned long displayTimeout = 3000;
 
     SettingsManager& settings;
-    DisplayManager* display = nullptr;
+    //DisplayManager* display = nullptr;
 };

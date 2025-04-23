@@ -2,6 +2,7 @@
 #include <TFT_eSPI.h>
 #include <Arduino.h>
 #include "../../core/Debug.h"
+#include "../../core/TaskManager.h"
 #include <functional>
 #include "../themes/ColorTheme.h"
 
@@ -65,10 +66,19 @@ private:
 public:
     WaveformWidget(const int16_t* wf, int samp, const WidgetColorTheme& themeRef, bool pulseOnBeat = false)
         : waveform(wf), samples(samp), theme(themeRef), beatPulse(pulseOnBeat) {
-        Debug::logPointer(Debug::DEBUG, "WaveformWidget", wf, __FILE__, __LINE__);
+        //Debug::logPointer(Debug::DEBUG, "WaveformWidget", wf, __FILE__, __LINE__);
     }
 
     void draw(TFT_eSPI& tft, int x, int y, int width, int height) override {
+        TaskManager::feedWatchdog();
+        
+        // Reduced drawing frequency
+        static unsigned long lastDrawTime = 0;
+        if (millis() - lastDrawTime < 50) { // Max 20 FPS
+            return;
+        }
+        lastDrawTime = millis();
+
         tft.drawRect(x, y, width, height, theme.secondary);
 
         if (!isValidWaveform()) {
@@ -76,6 +86,8 @@ public:
             return;
         }
 
+        // Draw waveform with reduced resolution
+        int step = width > 100 ? 2 : 1;
         int baseY = y + height / 2;
         uint16_t waveColor = beatPulse ? theme.powerColor : theme.primary;
 
@@ -83,23 +95,20 @@ public:
         else pulseIntensity = max(0.0f, pulseIntensity - 0.1f);
 
         int lastY = baseY;
-        for (int i = 0; i < width; i++) {
+        for (int i = 0; i < width; i += step) {
             float idx = (float)i * samples / width;
             int index = (int)idx;
-            float frac = idx - index;
-
-            float sample = index < samples - 1 ?
-                waveform[index] * (1.0f - frac) + waveform[index + 1] * frac :
-                waveform[index];
-
+            
+            float sample = waveform[index];
             int y1 = map(sample, -32768, 32767, -height / 2, height / 2);
             int currentY = baseY + y1;
+            
             tft.drawLine(x + i, baseY, x + i, currentY, waveColor);
-            if (i > 0) tft.drawLine(x + i - 1, lastY, x + i, currentY, waveColor);
+            if (i > 0) tft.drawLine(x + i - step, lastY, x + i, currentY, waveColor);
             lastY = currentY;
 
             if (i % 10 == 0) {
-                yield(); // Allow other tasks to run
+                TaskManager::yieldIfNeeded();
             }
         }
 

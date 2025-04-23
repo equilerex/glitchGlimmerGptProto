@@ -4,6 +4,7 @@
 #include <memory>
 #include <TFT_eSPI.h>
 #include "widgets/Widget.h"
+#include "../core/TaskManager.h"
 
 class GridLayout {
 private:
@@ -28,28 +29,50 @@ public:
     }
 
     void draw(TFT_eSPI& tft) {
-        tft.fillScreen(TFT_BLACK); // Clear screen
-        int x = 0, y = 0;
-        int rowHeight = 0;
+        static unsigned long lastFullRedraw = 0;
+        static size_t lastDrawnWidget = 0;
+        unsigned long now = millis();
 
-        for (size_t i = 0; i < widgets.size(); ++i) {
-            Widget* widget = widgets[i].get();
-            if (!widget) continue;
-
-            int w = widget->getMinWidth();
-            int h = widget->getMinHeight();
-
-            if (x + w > _width) {
-                x = 0;
-                y += rowHeight;
-                rowHeight = 0;
-            }
-
-            widget->draw(tft, x, y, w, h);
-            yield(); // Allow other tasks to run
-            x += w;
-            if (h > rowHeight) rowHeight = h;
+        // Only redraw background every 500ms
+        if (now - lastFullRedraw > 500) {
+            tft.fillScreen(TFT_BLACK);
+            lastFullRedraw = now;
+            lastDrawnWidget = 0;
         }
+
+        // Draw a maximum of 4 widgets per frame
+        size_t widgetsProcessed = 0;
+        while (lastDrawnWidget < widgets.size() && widgetsProcessed < 4) {
+            Widget* widget = widgets[lastDrawnWidget].get();
+            if (widget) {
+                TaskManager::yieldIfNeeded();
+                int w = widget->getMinWidth();
+                int h = widget->getMinHeight();
+
+                int x = 0, y = 0;
+                int rowHeight = 0;
+
+                if (x + w > _width) {
+                    x = 0;
+                    y += rowHeight;
+                    rowHeight = 0;
+                }
+
+                widget->draw(tft, x, y, w, h);
+                yield(); // Allow other tasks to run
+                x += w;
+                if (h > rowHeight) rowHeight = h;
+            }
+            lastDrawnWidget++;
+            widgetsProcessed++;
+        }
+
+        // Reset widget counter when all widgets are drawn
+        if (lastDrawnWidget >= widgets.size()) {
+            lastDrawnWidget = 0;
+        }
+
+        TaskManager::feedWatchdog();
     }
 
     void drawVerticalStack(TFT_eSPI& tft) {

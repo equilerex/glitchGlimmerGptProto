@@ -140,7 +140,7 @@ public:
             Serial.println(F("\nRegister dump:"));
             // Note: Additional register dump code would go here
             
-            delay(1000);
+            //delay(1000);
         });
 
         if (err != ESP_OK) {

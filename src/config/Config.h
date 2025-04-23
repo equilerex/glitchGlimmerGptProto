@@ -1,19 +1,40 @@
 #define THEME        "CYBERPUNK"       // Sampling rate in Hz
 
-// ==== AUDIO ====
-#define SAMPLE_RATE        44100       // Sampling rate in Hz
-#define NUM_SAMPLES        256         // FFT input sample count (power of 2)
-#define I2S_PORT           I2S_NUM_0   // Which I2S peripheral to use
-#define I2S_SCK            27          // Bit clock pin
-#define I2S_WS             26          // Word select (LR clock)
-#define I2S_SD             32          // Serial data input (from mic)
+
+// ==== I2S Audio Configuration ====
+#define I2S_PORT        I2S_NUM_0
+#define I2S_WS          26  // Word Select (LRCL)
+#define I2S_SD          32  // Serial Data in (DOUT from mic)
+#define I2S_SCK         27  // Bit Clock (BCLK)
+
+// ==== Sampling ====
+#define SAMPLE_RATE     44100        // Standard audio sampling rate
+#define NUM_SAMPLES     512          // Must be a power of 2 (used by FFT)
+#define CHANNEL_COUNT   1            // Mono input
+#define BITS_PER_SAMPLE I2S_BITS_PER_SAMPLE_32BIT
+
+// ==== Gain / Normalization ====
+#define NOISE_THRESHOLD     0.02f    // Minimum input level before considered real signal
+#define MAX_AUDIO_LEVEL     1.0f     // Normalized max range after scaling
+#define GAIN_SMOOTHING      0.92f    // Smoothing for gain level
+#define LOUDNESS_SMOOTHING  0.9f     // Smoothing for loudness calculation
+
+// ==== FFT Configuration ====
+#define FFT_SMOOTHING       0.8f     // Spectral smoothing for more stable bars
+#define FFT_BANDS           16       // Number of bands for visualization/spectrum
+
+// ==== Beat Detection ====
+#define BEAT_THRESHOLD      0.05f    // Minimum change in volume to consider beat
+#define MIN_BEAT_INTERVAL   300      // ms between beats (to avoid rapid re-triggers)
+
+// ==== Display ====
+#define DEFAULT_BRIGHTNESS  150
+
+
 
 // ==== LED ====
-
-#define DEFAULT_BRIGHTNESS 128         // Default brightness
-
 #define LED_0_PIN            25
-#define LED_1_PIN            12
+#define LED_1_PIN            33
 // #define LED_2_PIN            25
 // #define LED_3_PIN            25
 // #define LED_4_PIN            25
@@ -51,8 +72,8 @@
 #define MIN_FREE_HEAP         32768    // 32KB minimum free heap
 
 // ==== ENCODER ====
-#define ENCODER_PIN_A      22
-#define ENCODER_PIN_B      21
+#define ENCODER_PIN_A      39
+#define ENCODER_PIN_B      38
 #define ENCODER_BTN_PIN    17
 
 // ==== BUTTON ====
