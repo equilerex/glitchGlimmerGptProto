@@ -3,8 +3,7 @@
 #include <vector>
 #include <memory>
 #include <TFT_eSPI.h>
-#include "widgets/Widget.h"
-#include "../core/TaskManager.h"
+#include "widgets/Widget.h" 
 
 class GridLayout {
 private:
@@ -44,8 +43,7 @@ public:
         size_t widgetsProcessed = 0;
         while (lastDrawnWidget < widgets.size() && widgetsProcessed < 4) {
             Widget* widget = widgets[lastDrawnWidget].get();
-            if (widget) {
-                TaskManager::yieldIfNeeded();
+            if (widget) { 
                 int w = widget->getMinWidth();
                 int h = widget->getMinHeight();
 
@@ -71,8 +69,7 @@ public:
         if (lastDrawnWidget >= widgets.size()) {
             lastDrawnWidget = 0;
         }
-
-        TaskManager::feedWatchdog();
+ 
     }
 
     void drawVerticalStack(TFT_eSPI& tft) {

@@ -1,8 +1,7 @@
 #pragma once
 #include <TFT_eSPI.h>
 #include <Arduino.h>
-#include "../../core/Debug.h"
-#include "../../core/TaskManager.h"
+#include "../../core/Debug.h" 
 #include <functional>
 #include "../themes/ColorTheme.h"
 
@@ -70,7 +69,7 @@ public:
     }
 
     void draw(TFT_eSPI& tft, int x, int y, int width, int height) override {
-        TaskManager::feedWatchdog();
+ 
         
         // Reduced drawing frequency
         static unsigned long lastDrawTime = 0;
@@ -107,9 +106,7 @@ public:
             if (i > 0) tft.drawLine(x + i - step, lastY, x + i, currentY, waveColor);
             lastY = currentY;
 
-            if (i % 10 == 0) {
-                TaskManager::yieldIfNeeded();
-            }
+     
         }
 
         if (pulseIntensity > 0) {
@@ -187,7 +184,7 @@ private:
 
 
 
-/*
+
 class ScrollingTextWidget : public Widget {
 public:
     ScrollingTextWidget(std::function<String()> textFn)
@@ -216,4 +213,4 @@ private:
     std::function<String()> getText;
     int scrollOffset = 0;
     int scrollCounter = 0;
-};*/
+};

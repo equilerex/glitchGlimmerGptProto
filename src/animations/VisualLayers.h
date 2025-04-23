@@ -3,6 +3,8 @@
 
 #include <FastLED.h>
 #include <deque>
+
+#include "../animations/VisualLayer.h"
 #include "../audio/AudioFeatures.h"
 #include "../config/Config.h"
 #include "../audio/AudioSnapshot.h"

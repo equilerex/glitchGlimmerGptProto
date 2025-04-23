@@ -10,32 +10,36 @@
 #include "../display/DisplayManager.h"
 #include "../core/LEDStripController.h"
 #include "../core/SettingsManager.h"
+#include "../scenes/SceneDirector.h"
+#include "../scenes/MoodHistory.h"
+#include "../config/Config.h"
 
 
 class MainController {
 private:
     AudioFeatures audioFeatures;        // Must come before ledController
     AudioHistoryTracker audioHistory;   // Stores recent audio snapshots
+    MoodHistory moodHistory;
+    SceneRegistry sceneRegistry;        // <-- Add this line
+    SceneDirector sceneDirector;
     AudioProcessor audioProcessor;
     LEDStripController ledController;   // Uses audioFeatures and audioHistory
-    TFT_eSPI tft;                        // Must come before displayManager
+    TFT_eSPI tft = TFT_eSPI();                       // Must come before displayManager
     EncoderInput encoderInput;
     ButtonInput buttonInput;
     DisplayManager displayManager;
 
 public:
     MainController()
-        : ledController(audioFeatures),
+        : sceneDirector(moodHistory, sceneRegistry),
+          ledController(audioFeatures, moodHistory, audioHistory),
           encoderInput(ENCODER_PIN_A, ENCODER_PIN_B, ENCODER_BTN_PIN, settingsManager),
-          buttonInput(ledController, BUTTON_PIN_1, BUTTON_PIN_2), 
+          buttonInput(ledController, BUTTON_PIN_1, BUTTON_PIN_2),
           displayManager(tft)
     {}
 
     void begin() {
-        tft.init();
-        tft.setRotation(1);
-        tft.fillScreen(TFT_BLACK);
-
+        sceneDirector.begin();
         audioProcessor.begin();
         displayManager.begin();
         ledController.begin();
@@ -47,29 +51,45 @@ public:
     }
 
     void update() {
-        // Capture audio input
+        static unsigned long lastFrame = 0;
+        const unsigned long frameInterval = 10; // ~30 FPS
+
+        unsigned long now = millis();
+        if (now - lastFrame < frameInterval) {
+            return; // Skip this update, not enough time has passed
+        }
+        lastFrame = now;
+
         audioProcessor.captureAudio();
 
         // Analyze and store into audioFeatures
         audioFeatures = audioProcessor.analyzeAudio();
 
         // Track the current frame in rolling history
-        audioHistory.addSnapshot(audioFeatures); // <-- Use correct method
+        audioHistory.addSnapshot(audioFeatures);
+
 
         // Update all components
         encoderInput.update();
         buttonInput.update();
         ledController.update();
 
+        String debugInfo =
+    "Mood: " + moodHistory.getCurrentMoodName() +
+    "\nBPM: " + String(audioFeatures.bpm, 1) +
+    "\nEnergy: " + String(audioFeatures.energy, 1) +
+    "\nDynamics: " + String(audioFeatures.dynamics, 2) +
+    "\nScene: " + sceneDirector.getCurrentSceneName();
+
         displayManager.update(
             audioFeatures,
-            String(""),
+            debugInfo,
             1,
             4,
-            false
+            false,
+            String("")
         );
 
         FastLED.show();
-        delay(60);
     }
 };

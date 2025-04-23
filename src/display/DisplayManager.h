@@ -6,98 +6,80 @@
 #include "widgets/Widget.h"
 #include "themes/ColorTheme.h"
 #include "GridLayout.h"
-#include "../core/SettingsManager.h"
+#include "../config/Config.h"
+#include "../core/Debug.h"
+#include "SettingIconRenderer.h"
 
-class DisplayManager {
+class SettingIconWidget : public Widget {
+    String icon;
+    String value;
+    float pulse;
+    uint16_t primary;
+    uint16_t secondary;
+public:
+    SettingIconWidget(const String& icon, const String& value, float pulse, uint16_t primary, uint16_t secondary)
+        : icon(icon), value(value), pulse(pulse), primary(primary), secondary(secondary) {}
+
+    void draw(TFT_eSPI& tft, int x, int y, int w, int h) override {
+        int centerX = tft.width() / 2;
+        int iconY = tft.height() / 2 - 20;
+        int valueY = tft.height() / 2 + 20;
+
+        // Draw icon using SettingIconRenderer
+        SettingIconRenderer::draw(icon, tft, centerX, iconY, 18 * pulse, primary);
+
+        // Draw value
+        tft.setTextSize(2 * pulse);
+        tft.setTextColor(primary, TFT_BLACK);
+        int valWidth = tft.textWidth(value);
+        tft.setCursor(centerX - valWidth / 2, valueY);
+        tft.print(value);
+
+        // Draw hint text
+        tft.setTextSize(1);
+        tft.setTextColor(secondary, TFT_BLACK);
+        String hint = "press knob for more";
+        int hintWidth = tft.textWidth(hint);
+        tft.setCursor(centerX - hintWidth / 2, tft.height() - 16);
+        tft.print(hint);
+    }
+};
+#pragma once
+
+#include <TFT_eSPI.h>
+#include "../audio/AudioProcessor.h"
+#include "../display/GridLayout.h"
+#include "../display/themes/ColorTheme.h"
+
+ 
+class DisplayManager  {
 private:
-    TFT_eSPI& tft;
+    TFT_eSPI& _tft;
     GridLayout layout;
-    WidgetColorTheme theme = CyberpunkTheme;
-    std::vector<Widget*> widgets;
-    int scrollOffset = 0;
-    unsigned long lastScrollTime = 0;
-    String currentAnimation = "";
-    String currentError = "";
+
+    // Setting screen state
+    bool showSettingScreen = false;
+    bool loading = true;
+    String activeSettingName = "";
+    int activeSettingValue = 0;
+    unsigned long settingDisplayTime = 0;
+    bool errorState = false;
+    String errorMessage;
+    String currentAnimationName;
 
 public:
-    DisplayManager(TFT_eSPI& display) 
-        : tft(display), layout(display.width(), display.height()) {}
+DisplayManager(TFT_eSPI& display);
 
-    void begin() {
-        tft.fillScreen(theme.bg);
-        tft.setRotation(1);
-        tft.setTextSize(1);
-        tft.setTextColor(theme.text);
-        layout.clear();
-    }
-
-    void setTheme(const WidgetColorTheme& newTheme) {
-        theme = newTheme;
-    }
-
-    void showStartupScreen() {
-        tft.fillScreen(theme.bg);
-        tft.setCursor(20, 30);
-        tft.setTextColor(theme.primary);
-        tft.setTextSize(2);
-        tft.print("GlitchGlimmer");
-    }
-
+    void setTheme(const WidgetColorTheme& newTheme);
+    void begin();
+    void showStartupScreen();
     void update(const AudioFeatures& features, const String& animName,
-                int animIndex, int totalAnimations, bool hybridMode ) {
-        
-        
-        layout.addWidget(new VerticalBarWidget("BASS", features.bass, theme.bassColor));
-        layout.addWidget(new VerticalBarWidget("MID", features.mid, theme.midColor));
-        layout.addWidget(new VerticalBarWidget("TREBLE", features.treble, theme.trebleColor));
-        layout.addWidget(new VerticalBarWidget("PWR", features.volume, theme.powerColor));
-
-        layout.addWidget(new WaveformWidget(features.waveform, features.waveformSize, theme, features.beatDetected));
-        layout.addWidget(new AcronymValueWidget("MODE", hybridMode ? 1 : 0, hybridMode));
-        layout.addWidget(new AcronymValueWidget("IDX", animIndex));
-        layout.addWidget(new AcronymValueWidget("MAX", totalAnimations));
-
-        //layout.addWidget(new ScrollingTextWidget(animName));
-
-        if (!currentError.isEmpty()) {
-            //layout.addWidget(new ScrollingTextWidget(currentError));
-        }
-
-        layout.update(tft); // Pass the TFT_eSPI object
-    }
-
-    void showSetting(Setting setting, int value) {
-        String name = "---";
-        switch (setting) {
-            case Setting::BRIGHTNESS: name = "BRI"; break;
-            case Setting::SPEED:      name = "SPD"; break;
-            case Setting::HUE:        name = "HUE"; break;
-            case Setting::SATURATION: name = "SAT"; break;
-            default: break;
-        }
-        layout.addWidget(new AcronymValueWidget(name, value, true));
-        layout.update(tft); // Pass the TFT_eSPI object
-    }
-
-    void drawSettingScreen() {
-        layout.update(tft); // Pass the TFT_eSPI object
-    }
-
-    void updateAudioVisualization(const AudioFeatures& features,
-                                  int animIndex, int totalAnimations,
-                                  bool hybridMode) {
-        update(features, currentAnimation, animIndex, totalAnimations, hybridMode);
-    }
-
-    void showError(const String& message) {
-        currentError = message;
-    }
-
-    void clearError() {
-        currentError = "";
-    }
-
-    void setCurrentAnimation(const String& name) {
-        currentAnimation = name;
-    }
-}; // Add semicolon here
+                int animIndex, int animCount, bool autoSwitch, const String& keepReason);
+    void updateAudioVisualization(const AudioFeatures& features, int animIndex, int animCount, bool autoSwitch, String keepReason);
+    void showSetting(const String& name, int value);
+    void drawSettingScreen();
+    void showError(const String& message);
+    void setCurrentAnimation(const String& name);
+    void clearError();
+    bool hasError() const { return errorState; }
+};

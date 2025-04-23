@@ -17,8 +17,8 @@ public:
     }
 
     void update() {
-        int a = digitalRead(pinA);
-        int b = digitalRead(pinB);
+        int a = digitalRead(pinB);
+        int b = digitalRead(pinA);
         bool pressed = digitalRead(buttonPin) == LOW;
         unsigned long now = millis();
 

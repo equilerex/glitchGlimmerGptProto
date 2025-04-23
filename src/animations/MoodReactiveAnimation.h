@@ -2,7 +2,7 @@
 
 #include <FastLED.h>
 #include "../audio/AudioFeatures.h"
-#include "../audio/MoodHistory.h"
+#include "../scenes/MoodHistory.h"
 #include "Animation.h"
 
 class MoodReactiveAnimation : public Animation {

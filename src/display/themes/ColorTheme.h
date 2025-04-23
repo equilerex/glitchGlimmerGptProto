@@ -60,12 +60,4 @@ static const WidgetColorTheme BladeRunnerTheme = {
 };
 
 // Function to get theme based on config
-const WidgetColorTheme& getTheme() {
-    if (THEME == "BLADERUNNER") {
-        return BladeRunnerTheme;
-    } else if (THEME == "CYBERPUNK") {
-        return CyberpunkTheme;
-    } else {
-        return CyberpunkTheme;
-    }
-}
+const WidgetColorTheme& getTheme();

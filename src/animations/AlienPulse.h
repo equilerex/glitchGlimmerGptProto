@@ -53,7 +53,7 @@ public:
         }
 
         // Slow hue shift
-        hueShift += audio.freqHz * 0.001f;
+        hueShift += audio.frequency * 0.001f;
         wavePhase += audio.volume * 0.1f + 0.01f;
     }
 };

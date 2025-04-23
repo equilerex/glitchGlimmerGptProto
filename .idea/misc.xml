@@ -4,9 +4,17 @@
     <option name="pythonIntegrationState" value="YES" />
   </component>
   <component name="CidrRootsConfiguration">
-    <sourceRoots>
+    <libraryRoots>
+      <file path="$USER_HOME$/Documents/Arduino/libraries/Button2/src" />
+      <file path="$USER_HOME$/Documents/Arduino/libraries/arduinoFFT-master/src" />
+    </libraryRoots>
+    <excludeRoots>
+      <file path="$PROJECT_DIR$/.vscode" />
+      <file path="$PROJECT_DIR$/include" />
+      <file path="$PROJECT_DIR$/lib" />
       <file path="$PROJECT_DIR$/src" />
-    </sourceRoots>
+      <file path="$PROJECT_DIR$/test" />
+    </excludeRoots>
   </component>
   <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="PlatformIOSettings">

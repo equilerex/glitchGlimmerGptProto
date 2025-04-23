@@ -25,12 +25,11 @@ struct AudioFeatures {
     float noiseFloor = 0.0f;        // Tracked silence baseline
 
     bool signalPresence = false;  // True if volume exceeds noise floor (e.g., > 0.05)
-    float freqHz = 0.0f;
 
     int16_t* waveform = nullptr;    // Pointer to time-domain samples
     size_t waveformSize = 0;        // Size of waveform buffer
     double spectrum[NUM_SAMPLES / 2] = {};  // FFT magnitudes
 
-    float centroid = 0.0f;          // Add this member
-    float frequency = 0.0f;         // Add this member
+    float centroid = 0.0f;          //  ??
+    float frequency = 0.0f;         //  frequency
 };
